@@ -19,7 +19,9 @@ class LeaveController
     private static function authorizeAdmin()
     {
         if (!isset($_SESSION['user']) || $_SESSION['user']['role'] !== 'admin_approver') {
-            die("Unauthorized");
+            http_response_code(403);
+            header("Location: /leave-system/public/dashboard");
+            exit;
         }
     }
 
@@ -334,7 +336,7 @@ class LeaveController
             }
         } catch (Exception $e) {
             $db->rollBack();
-            die("Error: " . $e->getMessage());
+            $_SESSION['error'] = "Approval failed: " . $e->getMessage();
         }
 
         $redirect = ($_POST['_from'] ?? '') === 'requests'

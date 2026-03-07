@@ -208,16 +208,26 @@ function isActive(string $path, string $match, bool $exact = false): string
         <main class="main">
 
             <!-- Topbar -->
+            <?php
+            $pageTitles = [
+                '/leave-system/public/dashboard'         => 'Dashboard',
+                '/leave-system/public/admin/requests'    => 'Leave Requests',
+                '/leave-system/public/admin/users'       => 'Users',
+                '/leave-system/public/admin/departments' => 'Departments',
+                '/leave-system/public/admin/job-titles'  => 'Job Titles',
+                '/leave-system/public/admin/periods'     => 'Leave Periods',
+                '/leave-system/public/admin/leave-types' => 'Leave Types',
+                '/leave-system/public/admin/balances'    => 'Leave Balances',
+                '/leave-system/public/admin/holidays'    => 'Public Holidays',
+                '/leave-system/public/admin/settings'    => 'Settings',
+                '/leave-system/public/calendar'          => 'Calendar',
+                '/leave-system/public/leave'             => 'Submit Leave',
+                '/leave-system/public/my-history'        => 'My Leave History',
+            ];
+            $pageTitle = $pageTitles[$currentPath] ?? 'Leave Management';
+            ?>
             <div class="topbar">
-                <div class="topbar-left">
-                    <span class="topbar-page"><?= htmlspecialchars(basename(str_replace('-', ' ', $currentPath))) ?></span>
-                </div>
-                <div class="topbar-center">
-                    <img src="/leave-system/public/assets/black.png" alt="ICS" style="height:28px; width:auto;">
-                </div>
-                <div class="topbar-right">
-                    <!-- intentionally light — user info is in sidebar -->
-                </div>
+                <span class="topbar-page"><?= htmlspecialchars($pageTitle) ?></span>
             </div>
 
             <!-- Content -->
@@ -432,11 +442,10 @@ function isActive(string $path, string $match, bool $exact = false): string
             transform: none;
         }
 
-        /* Topbar override */
+        /* Topbar */
         .topbar {
             display: flex;
             align-items: center;
-            justify-content: space-between;
             height: var(--topbar-height);
             padding: 0 28px;
             background: var(--surface);
@@ -447,24 +456,11 @@ function isActive(string $path, string $match, bool $exact = false): string
             box-shadow: var(--shadow-sm);
         }
 
-        .topbar-left {
-            flex: 1;
-        }
-
         .topbar-page {
             font-size: 13px;
             color: var(--text-muted);
-            font-weight: 500;
+            font-weight: 600;
             text-transform: capitalize;
-        }
-
-        .topbar-center {
-            display: flex;
-            align-items: center;
-        }
-
-        .topbar-right {
-            flex: 1;
         }
 
         /* Tablet — icon-only sidebar */

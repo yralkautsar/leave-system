@@ -813,10 +813,7 @@ tbody tr:last-child td {
     padding: 6px 0;
 }
 
-/* Global modal root */
-#globalModalRoot {
-    /* empty container — .gm-bd inside handles its own fixed positioning */
-}
+/* Global modal root — .gm-bd inside handles its own fixed positioning */
 
 
 /* ═══════════════════════════════════════════════════════════
