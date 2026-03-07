@@ -12,7 +12,7 @@ $today     = date('l, d F Y');
 ══════════════════════════════════════════ -->
 <div class="dash-greeting">
     <div>
-        <h2 class="dash-greeting-title"><?= $greeting ?>, <?= htmlspecialchars($adminName) ?> 👋</h2>
+        <h2 class="dash-greeting-title"><?= $greeting ?>, <?= htmlspecialchars($adminName) ?></h2>
         <p class="subtext"><?= $today ?></p>
     </div>
     <a href="/leave-system/public/admin/requests" class="btn-outline" style="flex-shrink:0;font-size:13px;">
