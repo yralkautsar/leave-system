@@ -51,6 +51,105 @@ class LeaveController
         self::authorizeLogin();
         $db = Database::connect();
 
+        $empId        = (int)$_SESSION['user']['id'];
+        $leaveTypeId  = (int)($_POST['leave_type_id'] ?? 0);
+        $startDate    = trim($_POST['start_date']    ?? '');
+        $endDate      = trim($_POST['end_date']      ?? '');
+        $durationType = $_POST['duration_type'] ?? 'full';
+
+        // ── 1. Basic input validation ──────────────────────────────────
+        if (!$leaveTypeId || !$startDate || !$endDate) {
+            $_SESSION['error'] = "All fields are required.";
+            header("Location: /leave-system/public/leave");
+            exit;
+        }
+
+        if ($endDate < $startDate) {
+            $_SESSION['error'] = "End date cannot be before start date.";
+            header("Location: /leave-system/public/leave");
+            exit;
+        }
+
+        // ── 2. Server-side total_days via LeaveCalculator ──────────────
+        require_once __DIR__ . '/../Services/LeaveCalculator.php';
+
+        try {
+            $workingDays = LeaveCalculator::calculateWorkingDays($empId, $startDate, $endDate);
+        } catch (Exception $e) {
+            $_SESSION['error'] = "Could not calculate working days: " . $e->getMessage();
+            header("Location: /leave-system/public/leave");
+            exit;
+        }
+
+        if ($workingDays <= 0) {
+            $_SESSION['error'] = "The selected date range contains no working days (all weekends or public holidays).";
+            header("Location: /leave-system/public/leave");
+            exit;
+        }
+
+        // Half day: halve the working days, minimum 0.5
+        $totalDays = ($durationType === 'half')
+            ? max(0.5, round($workingDays / 2, 1))
+            : (float)$workingDays;
+
+        // ── 3. Server-side period resolution ──────────────────────────
+        // Find a period where the employee has balance AND start_date falls within
+        $stmt = $db->prepare("
+            SELECT lb.leave_period_id, lp.name AS period_name, lb.remaining_days
+            FROM leave_balances lb
+            JOIN leave_periods lp ON lb.leave_period_id = lp.id
+            WHERE lb.employee_id   = :emp
+            AND   lb.leave_type_id = :type
+            AND   lp.start_date   <= :start
+            AND   lp.end_date     >= :start
+            ORDER BY lp.start_date ASC
+            LIMIT 1
+        ");
+        $stmt->execute([
+            'emp'   => $empId,
+            'type'  => $leaveTypeId,
+            'start' => $startDate,
+        ]);
+        $periodRow = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$periodRow) {
+            $_SESSION['error'] = "No leave period found for the selected dates. Please contact HR.";
+            header("Location: /leave-system/public/leave");
+            exit;
+        }
+
+        $leavePeriodId = $periodRow['leave_period_id'];
+        $remaining     = (float)$periodRow['remaining_days'];
+
+        // ── 4. Balance pre-check ───────────────────────────────────────
+        if ($remaining < $totalDays) {
+            $_SESSION['error'] = "Insufficient balance. You have {$remaining} day(s) remaining but this request requires {$totalDays} day(s).";
+            header("Location: /leave-system/public/leave");
+            exit;
+        }
+
+        // ── 5. Overlap check ───────────────────────────────────────────
+        $stmt = $db->prepare("
+            SELECT COUNT(*)
+            FROM leave_requests
+            WHERE employee_id = :emp
+            AND   status NOT IN ('rejected', 'cancelled')
+            AND   start_date <= :end
+            AND   end_date   >= :start
+        ");
+        $stmt->execute([
+            'emp'   => $empId,
+            'start' => $startDate,
+            'end'   => $endDate,
+        ]);
+
+        if ((int)$stmt->fetchColumn() > 0) {
+            $_SESSION['error'] = "You already have a leave request that overlaps with the selected dates.";
+            header("Location: /leave-system/public/leave");
+            exit;
+        }
+
+        // ── 6. Insert ──────────────────────────────────────────────────
         $stmt = $db->prepare("
             INSERT INTO leave_requests
             (employee_id, leave_type_id, leave_period_id, start_date, end_date, duration_type, total_days, status, created_at)
@@ -59,46 +158,43 @@ class LeaveController
         ");
 
         $stmt->execute([
-            'emp'      => $_SESSION['user']['id'],
-            'type'     => $_POST['leave_type_id'],
-            'period'   => $_POST['leave_period_id'],
-            'start'    => $_POST['start_date'],
-            'end'      => $_POST['end_date'],
-            'duration' => $_POST['duration_type'],
-            'total'    => $_POST['total_days']
+            'emp'      => $empId,
+            'type'     => $leaveTypeId,
+            'period'   => $leavePeriodId,
+            'start'    => $startDate,
+            'end'      => $endDate,
+            'duration' => $durationType,
+            'total'    => $totalDays,
         ]);
 
-        // ── Email notification ──
+        // ── 7. Email notification ──────────────────────────────────────
         try {
             require_once __DIR__ . '/../Services/MailService.php';
 
-            // Fetch employee detail (with hod_id, gm_id, department)
             $empStmt = $db->prepare("
                 SELECT u.*, d.name AS department
                 FROM users u
                 LEFT JOIN departments d ON u.department_id = d.id
                 WHERE u.id = :id
             ");
-            $empStmt->execute(['id' => $_SESSION['user']['id']]);
+            $empStmt->execute(['id' => $empId]);
             $employee = $empStmt->fetch(PDO::FETCH_ASSOC);
 
-            // Fetch leave type name
             $ltStmt = $db->prepare("SELECT name FROM leave_types WHERE id = :id");
-            $ltStmt->execute(['id' => $_POST['leave_type_id']]);
+            $ltStmt->execute(['id' => $leaveTypeId]);
             $leaveTypeName = $ltStmt->fetchColumn();
 
-            $request = [
-                'leave_type'  => $leaveTypeName,
-                'start_date'  => $_POST['start_date'],
-                'end_date'    => $_POST['end_date'],
-                'total_days'  => $_POST['total_days'],
-            ];
-
-            MailService::notifyLeaveSubmitted($request, $employee);
+            MailService::notifyLeaveSubmitted([
+                'leave_type' => $leaveTypeName,
+                'start_date' => $startDate,
+                'end_date'   => $endDate,
+                'total_days' => $totalDays,
+            ], $employee);
         } catch (Exception $e) {
-            // Silent — email failure must not block leave submission
+            // Silent — email failure must not block submission
         }
 
+        $_SESSION['success'] = "Leave request submitted successfully.";
         header("Location: /leave-system/public/dashboard");
         exit;
     }
