@@ -99,6 +99,23 @@ $periods    = $periods    ?? [];
         background: #f8fafc;
     }
 
+    .bal-btn-export {
+        padding: 8px 16px;
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 600;
+        border: 1px solid #16a34a;
+        background: #fff;
+        color: #16a34a;
+        text-decoration: none;
+        display: inline-block;
+        transition: .15s;
+    }
+
+    .bal-btn-export:hover {
+        background: #dcfce7;
+    }
+
     /* ── Card / table ───────────────────────────────────── */
     .bal-card {
         background: #fff;
@@ -702,6 +719,25 @@ $periods    = $periods    ?? [];
             </div>
         </div>
     </form>
+
+    <?php
+    $exportQuery = http_build_query([
+        'search' => $_GET['search'] ?? '',
+        'type'   => $_GET['type']   ?? '',
+        'period' => $_GET['period'] ?? '',
+    ]);
+    ?>
+    <div style="margin-top:12px;text-align:right;">
+        <a href="/leave-system/public/admin/balances/export?<?= $exportQuery ?>"
+            class="bal-btn-export">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="vertical-align:middle;margin-right:5px;">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="7 10 12 15 17 10" />
+                <line x1="12" y1="15" x2="12" y2="3" />
+            </svg>
+            Export CSV
+        </a>
+    </div>
 </div>
 
 <!-- ── Table ─────────────────────────────────────────── -->

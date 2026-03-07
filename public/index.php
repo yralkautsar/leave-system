@@ -225,6 +225,11 @@ if ($uri === '/leave-system/public/admin/balances') {
     exit;
 }
 
+if ($uri === '/leave-system/public/admin/balances/export' && $_SERVER['REQUEST_METHOD'] === 'GET') {
+    LeaveController::exportBalances();
+    exit;
+}
+
 if ($uri === '/leave-system/public/admin/balance-adjust' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     LeaveController::adjustBalance();
     exit;

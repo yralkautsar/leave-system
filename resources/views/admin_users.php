@@ -18,6 +18,74 @@ $roleLabel   = ['employee' => 'Employee', 'admin_approver' => 'Admin'];
         gap: 16px;
     }
 
+    /* ── Filter bar ── */
+    .u-filter-bar {
+        background: #fff;
+        border-radius: 12px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+        padding: 16px 20px;
+        margin-bottom: 20px;
+    }
+
+    .u-filter-grid {
+        display: grid;
+        grid-template-columns: 2fr 1fr 1fr 1fr auto;
+        gap: 12px;
+        align-items: end;
+    }
+
+    .u-fg input,
+    .u-fg select {
+        width: 100%;
+        padding: 9px 12px;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        font-size: 13px;
+        color: #374151;
+        background: #fff;
+        box-sizing: border-box;
+    }
+
+    .u-fg input:focus,
+    .u-fg select:focus {
+        border-color: #f97316;
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.12);
+    }
+
+    .u-btn-search {
+        padding: 9px 20px;
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 600;
+        border: none;
+        background: #f97316;
+        color: #fff;
+        cursor: pointer;
+        white-space: nowrap;
+    }
+
+    .u-btn-search:hover {
+        background: #ea580c;
+    }
+
+    .u-btn-clear {
+        padding: 8px 14px;
+        border-radius: 8px;
+        font-size: 12.5px;
+        font-weight: 500;
+        border: 1px solid #e5e7eb;
+        background: #fff;
+        color: #64748b;
+        text-decoration: none;
+        display: inline-block;
+        white-space: nowrap;
+    }
+
+    .u-btn-clear:hover {
+        background: #f8fafc;
+    }
+
     /* ── Table ── */
     .u-card {
         background: #fff;
@@ -440,6 +508,53 @@ $roleLabel   = ['employee' => 'Employee', 'admin_approver' => 'Admin'];
     <div class="alert-error" style="margin-bottom:16px;"><?= htmlspecialchars($_SESSION['error']);
                                                             unset($_SESSION['error']); ?></div>
 <?php endif; ?>
+<?php if (isset($_SESSION['warning'])): ?>
+    <div class="alert-warning" style="margin-bottom:16px;"><?= htmlspecialchars($_SESSION['warning']);
+                                                            unset($_SESSION['warning']); ?></div>
+<?php endif; ?>
+
+<!-- SEARCH / FILTER -->
+<div class="u-filter-bar">
+    <form method="GET" action="/leave-system/public/admin/users">
+        <div class="u-filter-grid">
+            <div class="u-fg">
+                <input type="text" name="search"
+                    placeholder="Search name or email…"
+                    value="<?= htmlspecialchars($_GET['search'] ?? '') ?>">
+            </div>
+            <div class="u-fg">
+                <select name="role">
+                    <option value="">All Roles</option>
+                    <option value="employee" <?= (($_GET['role'] ?? '') === 'employee')       ? 'selected' : '' ?>>Employee</option>
+                    <option value="admin_approver" <?= (($_GET['role'] ?? '') === 'admin_approver') ? 'selected' : '' ?>>Admin</option>
+                </select>
+            </div>
+            <div class="u-fg">
+                <select name="dept">
+                    <option value="">All Departments</option>
+                    <?php foreach ($departments as $d): ?>
+                        <option value="<?= $d['id'] ?>" <?= (($_GET['dept'] ?? '') == $d['id']) ? 'selected' : '' ?>>
+                            <?= htmlspecialchars($d['name']) ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <div class="u-fg">
+                <select name="status">
+                    <option value="">All Status</option>
+                    <option value="active" <?= (($_GET['status'] ?? '') === 'active')    ? 'selected' : '' ?>>Active</option>
+                    <option value="suspended" <?= (($_GET['status'] ?? '') === 'suspended') ? 'selected' : '' ?>>Suspended</option>
+                </select>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center;">
+                <button type="submit" class="u-btn-search">Search</button>
+                <?php if (!empty($_GET['search']) || !empty($_GET['role']) || !empty($_GET['dept']) || !empty($_GET['status'])): ?>
+                    <a href="/leave-system/public/admin/users" class="u-btn-clear">Clear</a>
+                <?php endif; ?>
+            </div>
+        </div>
+    </form>
+</div>
 
 <!-- TABLE -->
 <div class="u-card">

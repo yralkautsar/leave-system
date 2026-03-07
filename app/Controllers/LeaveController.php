@@ -747,7 +747,13 @@ class LeaveController
             ORDER BY name ASC
         ")->fetchAll(PDO::FETCH_ASSOC);
 
-        $users = $db->query("
+        // ── Filters ──
+        $search     = trim($_GET['search'] ?? '');
+        $roleFilter = $_GET['role']   ?? '';
+        $deptFilter = $_GET['dept']   ?? '';
+        $statusFilter = $_GET['status'] ?? '';
+
+        $query = "
             SELECT
                 u.*,
                 d.name  AS department,
@@ -761,8 +767,35 @@ class LeaveController
             LEFT JOIN job_titles j   ON u.job_title_id  = j.id
             LEFT JOIN users hod      ON u.hod_id        = hod.id
             LEFT JOIN users gm       ON u.gm_id         = gm.id
-            ORDER BY u.name ASC
-        ")->fetchAll(PDO::FETCH_ASSOC);
+            WHERE 1=1
+        ";
+
+        $params = [];
+
+        if ($search) {
+            $query .= " AND (u.name LIKE :search OR u.email LIKE :search2)";
+            $params['search']  = "%$search%";
+            $params['search2'] = "%$search%";
+        }
+        if ($roleFilter) {
+            $query .= " AND u.role = :role";
+            $params['role'] = $roleFilter;
+        }
+        if ($deptFilter) {
+            $query .= " AND u.department_id = :dept";
+            $params['dept'] = $deptFilter;
+        }
+        if ($statusFilter === 'active') {
+            $query .= " AND u.is_active = 1";
+        } elseif ($statusFilter === 'suspended') {
+            $query .= " AND u.is_active = 0";
+        }
+
+        $query .= " ORDER BY u.name ASC";
+
+        $stmt = $db->prepare($query);
+        $stmt->execute($params);
+        $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         require __DIR__ . '/../../resources/views/admin_users.php';
     }
@@ -1374,6 +1407,88 @@ class LeaveController
             ->fetchAll(PDO::FETCH_ASSOC);
 
         require __DIR__ . '/../../resources/views/admin_balances.php';
+    }
+
+    public static function exportBalances()
+    {
+        self::authorizeAdmin();
+        $db = Database::connect();
+
+        $search = $_GET['search'] ?? '';
+        $type   = $_GET['type']   ?? '';
+        $period = $_GET['period'] ?? '';
+
+        $query = "
+            SELECT
+                u.name          AS employee,
+                d.name          AS department,
+                lt.name         AS leave_type,
+                lp.name         AS period,
+                lb.total_days,
+                lb.used_days,
+                (lb.total_days - lb.used_days) AS remaining_days
+            FROM leave_balances lb
+            JOIN users u          ON lb.employee_id    = u.id
+            JOIN leave_types lt   ON lb.leave_type_id  = lt.id
+            JOIN leave_periods lp ON lb.leave_period_id = lp.id
+            LEFT JOIN departments d ON u.department_id  = d.id
+            WHERE 1=1
+        ";
+
+        $params = [];
+
+        if ($search) {
+            $query .= " AND u.name LIKE :search";
+            $params['search'] = "%$search%";
+        }
+        if ($type) {
+            $query .= " AND lt.id = :type";
+            $params['type'] = $type;
+        }
+        if ($period) {
+            $query .= " AND lp.id = :period";
+            $params['period'] = $period;
+        }
+
+        $query .= " ORDER BY u.name ASC, lt.name ASC";
+
+        $stmt = $db->prepare($query);
+        $stmt->execute($params);
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        $filename = 'leave_balances_' . date('Y-m-d') . '.csv';
+        header('Content-Type: text/csv; charset=UTF-8');
+        header('Content-Disposition: attachment; filename="' . $filename . '"');
+        header('Pragma: no-cache');
+        header('Expires: 0');
+
+        $out = fopen('php://output', 'w');
+        fputs($out, "\xEF\xBB\xBF"); // UTF-8 BOM for Excel
+
+        fputcsv($out, [
+            'Employee',
+            'Department',
+            'Leave Type',
+            'Period',
+            'Total Days',
+            'Used Days',
+            'Remaining Days',
+        ]);
+
+        foreach ($rows as $r) {
+            fputcsv($out, [
+                $r['employee'],
+                $r['department']   ?? '',
+                $r['leave_type'],
+                $r['period'],
+                $r['total_days'],
+                $r['used_days'],
+                $r['remaining_days'],
+            ]);
+        }
+
+        fclose($out);
+        exit;
     }
 
     public static function adjustBalance()
