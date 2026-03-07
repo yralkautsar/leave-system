@@ -543,15 +543,15 @@ $badgeClass = [
 <script>
     async function openDetailModal(id) {
         document.getElementById('globalModalRoot').innerHTML = `
-        <div class="gm-bd" onclick="if(event.target===this)closeDetailModal()">
+        <div class="gm-bd">
             <div class="gm-box gm-box-lg">
                 <div class="gm-hd">
                     <h3>Leave Request</h3>
                     <button type="button" class="gm-x" onclick="closeDetailModal()">✕</button>
                 </div>
-                <div class="gm-body" style="text-align:center;padding:40px 0;color:#94a3b8;">
+                <div class="gm-body" style="text-align:center;padding:48px 0;color:#94a3b8;">
                     <div class="req-spinner"></div>
-                    <p style="margin-top:12px;font-size:13px;">Loading...</p>
+                    <p style="margin-top:14px;font-size:13px;">Loading…</p>
                 </div>
             </div>
         </div>`;
@@ -605,64 +605,87 @@ $badgeClass = [
             <div class="gm-bd" onclick="if(event.target===this)closeDetailModal()">
                 <div class="gm-box gm-box-lg" style="max-height:88vh;">
 
-                    <div class="det-header">
+                    <!-- Header -->
+                    <div class="gm-hd">
                         <div class="det-emp-block">
                             <div class="det-avatar">${data.employee_name.charAt(0).toUpperCase()}</div>
                             <div>
                                 <div class="det-emp-name">${data.employee_name}</div>
                                 <div class="det-emp-meta">${data.department||'—'} · ${data.job_title||'—'}</div>
-                                <div class="det-emp-meta">${data.employee_email}</div>
                             </div>
                         </div>
-                        <span class="badge" style="background:${sc}18;color:${sc};border:1px solid ${sc}40;">
-                            ${data.status.charAt(0).toUpperCase()+data.status.slice(1)}
-                        </span>
-                    </div>
-
-                    <div class="det-section">
-                        <div class="det-section-title">Leave Details</div>
-                        <div class="det-grid">
-                            <div class="det-item">
-                                <div class="det-label">Leave Type</div>
-                                <div class="det-value">${data.leave_type}</div>
-                            </div>
-                            <div class="det-item">
-                                <div class="det-label">Duration</div>
-                                <div class="det-value">${data.total_days} day${data.total_days>1?'s':''} · ${data.duration_type==='half'?'Half Day':'Full Day'}</div>
-                            </div>
-                            <div class="det-item">
-                                <div class="det-label">Start Date</div>
-                                <div class="det-value">${fmt(data.start_date)}</div>
-                            </div>
-                            <div class="det-item">
-                                <div class="det-label">End Date</div>
-                                <div class="det-value">${fmt(data.end_date)}</div>
-                            </div>
-                            <div class="det-item">
-                                <div class="det-label">Period</div>
-                                <div class="det-value">${data.period_name||'—'}</div>
-                            </div>
-                            <div class="det-item">
-                                <div class="det-label">Submitted</div>
-                                <div class="det-value">${fmtDt(data.created_at)}</div>
-                            </div>
-                            ${data.approved_at ? `
-                            <div class="det-item">
-                                <div class="det-label">Processed At</div>
-                                <div class="det-value">${fmtDt(data.approved_at)}</div>
-                            </div>` : ''}
-                            ${data.processed_by ? `
-                            <div class="det-item">
-                                <div class="det-label">Processed By</div>
-                                <div class="det-value">${data.processed_by}</div>
-                            </div>` : ''}
+                        <div style="display:flex;align-items:center;gap:10px;flex-shrink:0;">
+                            <span class="badge" style="background:${sc}18;color:${sc};border:1px solid ${sc}40;font-size:12px;padding:4px 10px;border-radius:999px;">
+                                ${data.status.charAt(0).toUpperCase()+data.status.slice(1)}
+                            </span>
+                            <button type="button" class="gm-x" onclick="closeDetailModal()">✕</button>
                         </div>
                     </div>
 
-                    ${balanceRow}
+                    <!-- Body (scrollable) -->
+                    <div class="gm-body">
 
+                        <div class="det-section">
+                            <div class="det-section-title">Leave Details</div>
+                            <div class="det-grid">
+                                <div class="det-item">
+                                    <div class="det-label">Leave Type</div>
+                                    <div class="det-value">${data.leave_type}</div>
+                                </div>
+                                <div class="det-item">
+                                    <div class="det-label">Duration</div>
+                                    <div class="det-value">${data.total_days} day${data.total_days>1?'s':''} · ${data.duration_type==='half'?'Half Day':'Full Day'}</div>
+                                </div>
+                                <div class="det-item">
+                                    <div class="det-label">Start Date</div>
+                                    <div class="det-value">${fmt(data.start_date)}</div>
+                                </div>
+                                <div class="det-item">
+                                    <div class="det-label">End Date</div>
+                                    <div class="det-value">${fmt(data.end_date)}</div>
+                                </div>
+                                <div class="det-item">
+                                    <div class="det-label">Period</div>
+                                    <div class="det-value">${data.period_name||'—'}</div>
+                                </div>
+                                <div class="det-item">
+                                    <div class="det-label">Submitted</div>
+                                    <div class="det-value">${fmtDt(data.created_at)}</div>
+                                </div>
+                                ${data.approved_at ? `
+                                <div class="det-item">
+                                    <div class="det-label">Processed At</div>
+                                    <div class="det-value">${fmtDt(data.approved_at)}</div>
+                                </div>` : ''}
+                                ${data.processed_by ? `
+                                <div class="det-item">
+                                    <div class="det-label">Processed By</div>
+                                    <div class="det-value">${data.processed_by}</div>
+                                </div>` : ''}
+                                ${data.employee_email ? `
+                                <div class="det-item">
+                                    <div class="det-label">Email</div>
+                                    <div class="det-value">${data.employee_email}</div>
+                                </div>` : ''}
+                            </div>
+                        </div>
+
+                        ${balanceRow}
+
+                    </div><!-- /.gm-body -->
+
+                    <!-- Footer -->
                     <div class="gm-ft">
-                        <button class="gm-btn-cancel" onclick="closeDetailModal()">Close</button>
+                        ${data.status === 'pending' ? `
+                        <form method="POST" action="/leave-system/public/reject" style="margin:0;">
+                            <input type="hidden" name="id" value="${data.id}">
+                            <button class="gm-btn-danger" onclick="closeDetailModal()">Reject</button>
+                        </form>
+                        <form method="POST" action="/leave-system/public/approve" style="margin:0;">
+                            <input type="hidden" name="id" value="${data.id}">
+                            <button class="gm-btn-save" style="background:#16a34a;" onclick="closeDetailModal()">Approve</button>
+                        </form>
+                        ` : `<button class="gm-btn-cancel" onclick="closeDetailModal()">Close</button>`}
                     </div>
 
                 </div>
