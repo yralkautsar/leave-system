@@ -129,7 +129,7 @@ function isActive(string $path, string $match, bool $exact = false): string
                     <div class="nav-section">Leave Config</div>
 
                     <a href="/leave-system/public/admin/periods"
-                        class="nav-link <?= isActive($currentPath, '/admin/periods') ?>">
+                        class="nav-link <?= isActive($currentPath, '/admin/periods') || isActive($currentPath, '/admin/leave-types') ? 'active' : '' ?>">
                         <?= icon('periods') ?>
                         <span>Leave Periods</span>
                     </a>
@@ -566,6 +566,36 @@ function isActive(string $path, string $match, bool $exact = false): string
         </script>
     <?php endif; ?>
 
+    <script>
+        /* ── Global Modal Helper ─────────────────────────────────
+   Usage:  openGM({ title, html, size, onOpen })
+   size: 'sm' | '' | 'lg'
+   Close:  closeGM()
+─────────────────────────────────────────────────────── */
+        window.openGM = function(opts) {
+            const sizeClass = opts.size === 'sm' ? 'gm-box-sm' : opts.size === 'lg' ? 'gm-box-lg' : '';
+            document.getElementById('globalModalRoot').innerHTML = `
+    <div class="gm-bd" onclick="if(event.target===this)closeGM()">
+        <div class="gm-box ${sizeClass}">
+            <div class="gm-hd">
+                <h3>${opts.title || ''}</h3>
+                <button type="button" class="gm-x" onclick="closeGM()">✕</button>
+            </div>
+            ${opts.html || ''}
+        </div>
+    </div>`;
+            if (typeof opts.onOpen === 'function') opts.onOpen();
+        };
+
+        window.closeGM = function() {
+            document.getElementById('globalModalRoot').innerHTML = '';
+        };
+
+        /* ── Escape HTML helper (available globally) ── */
+        window.escH = function(s) {
+            return String(s ?? '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        };
+    </script>
 </body>
 
 </html>

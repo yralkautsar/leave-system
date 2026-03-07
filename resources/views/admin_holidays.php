@@ -375,7 +375,7 @@ foreach ($holidays as $h) {
 <div class="hol-header">
     <div>
         <h2 style="margin:0 0 4px;">Public Holidays</h2>
-        <p class="subtext" style="margin:0;">National and company public holidays</p>
+        <p class="subtext" style="margin:0;">National and company holidays — used to exclude non-working days from leave calculations</p>
     </div>
     <button class="btn-primary" onclick="openHolModal()">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="vertical-align:middle;margin-right:4px;">
@@ -414,14 +414,18 @@ foreach ($holidays as $h) {
 <!-- CONTENT -->
 <div class="card">
     <?php if (empty($holidays)): ?>
-        <div class="hol-empty">
-            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" stroke-width="1.5" style="display:block;margin:0 auto 12px;">
-                <rect x="3" y="4" width="18" height="18" rx="2" />
-                <line x1="16" y1="2" x2="16" y2="6" />
-                <line x1="8" y1="2" x2="8" y2="6" />
-                <line x1="3" y1="10" x2="21" y2="10" />
-            </svg>
-            No holidays in <?= $year ?>. Click <strong>Add Holiday</strong> to add one.
+        <div class="empty-state">
+            <div class="empty-state-icon">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <rect x="3" y="4" width="18" height="18" rx="2" />
+                    <line x1="16" y1="2" x2="16" y2="6" />
+                    <line x1="8" y1="2" x2="8" y2="6" />
+                    <line x1="3" y1="10" x2="21" y2="10" />
+                </svg>
+            </div>
+            <div class="empty-state-title">No holidays in <?= $year ?></div>
+            <div class="empty-state-desc">Add national or company holidays so they're excluded from leave day calculations and shown on the calendar.</div>
+            <button class="btn-primary" onclick="openHolModal()">+ Add Holiday</button>
         </div>
     <?php else: ?>
         <?php foreach ($monthNames as $mNum => $mName): ?>

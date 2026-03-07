@@ -732,7 +732,22 @@ $periods    = $periods    ?? [];
         <tbody>
             <?php if (empty($balances)): ?>
                 <tr>
-                    <td colspan="7" class="empty-row">No balances found.</td>
+                    <td colspan="7" style="padding:0;">
+                        <div class="empty-state">
+                            <div class="empty-state-icon">
+                                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                    <line x1="12" y1="1" x2="12" y2="23" />
+                                    <path d="M17 5H9.5a3.5 3.5 0 1 0 0 7h5a3.5 3.5 0 1 1 0 7H6" />
+                                </svg>
+                            </div>
+                            <div class="empty-state-title">No leave balances found</div>
+                            <?php if (!empty($_GET['search']) || !empty($_GET['type']) || !empty($_GET['period'])): ?>
+                                <div class="empty-state-desc">No balances match the current filters. Try adjusting or <a href="/leave-system/public/admin/balances">clearing</a> your search.</div>
+                            <?php else: ?>
+                                <div class="empty-state-desc">Balances are generated from a Leave Period. Go to <a href="/leave-system/public/admin/periods">Leave Periods</a> and click <strong>Generate Balance</strong> to allocate leave to employees.</div>
+                            <?php endif; ?>
+                        </div>
+                    </td>
                 </tr>
             <?php else: ?>
                 <?php foreach ($balances as $b):

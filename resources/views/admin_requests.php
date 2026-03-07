@@ -147,8 +147,27 @@ $badgeClass = [
 
             <?php if (empty($requests)): ?>
                 <tr>
-                    <td colspan="8" class="empty-row">
-                        No requests found for the selected filters.
+                    <td colspan="8" style="padding:0;">
+                        <div class="empty-state">
+                            <div class="empty-state-icon">
+                                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                                    <polyline points="14 2 14 8 20 8" />
+                                    <line x1="16" y1="13" x2="8" y2="13" />
+                                    <line x1="16" y1="17" x2="8" y2="17" />
+                                </svg>
+                            </div>
+                            <div class="empty-state-title">No requests found</div>
+                            <div class="empty-state-desc">
+                                <?php if ($currentStatus === 'pending'): ?>
+                                    Great — no pending requests right now. All caught up!
+                                <?php elseif ($currentSearch || $currentType || $currentFrom || $currentTo): ?>
+                                    No requests match the current filters. Try adjusting your search.
+                                <?php else: ?>
+                                    No leave requests have been submitted yet.
+                                <?php endif; ?>
+                            </div>
+                        </div>
                     </td>
                 </tr>
             <?php else: ?>
@@ -519,14 +538,18 @@ $badgeClass = [
 </style>
 
 <!-- ══ DETAIL MODAL ══ -->
-<div id="reqDetailRoot"></div>
+<!-- detail modal uses globalModalRoot -->
 
 <script>
     async function openDetailModal(id) {
-        document.getElementById('reqDetailRoot').innerHTML = `
-        <div class="modal" onclick="if(event.target===this)closeDetailModal()">
-            <div class="modal-content" style="width:520px;">
-                <div style="text-align:center;padding:40px 0;color:var(--text-muted);">
+        document.getElementById('globalModalRoot').innerHTML = `
+        <div class="gm-bd" onclick="if(event.target===this)closeDetailModal()">
+            <div class="gm-box gm-box-lg">
+                <div class="gm-hd">
+                    <h3>Leave Request</h3>
+                    <button type="button" class="gm-x" onclick="closeDetailModal()">✕</button>
+                </div>
+                <div class="gm-body" style="text-align:center;padding:40px 0;color:#94a3b8;">
                     <div class="req-spinner"></div>
                     <p style="margin-top:12px;font-size:13px;">Loading...</p>
                 </div>
@@ -578,9 +601,9 @@ $badgeClass = [
                 </div>`;
             }
 
-            document.getElementById('reqDetailRoot').innerHTML = `
-            <div class="modal" onclick="if(event.target===this)closeDetailModal()">
-                <div class="modal-content det-modal">
+            document.getElementById('globalModalRoot').innerHTML = `
+            <div class="gm-bd" onclick="if(event.target===this)closeDetailModal()">
+                <div class="gm-box gm-box-lg" style="max-height:88vh;">
 
                     <div class="det-header">
                         <div class="det-emp-block">
@@ -638,20 +661,21 @@ $badgeClass = [
 
                     ${balanceRow}
 
-                    <div class="modal-actions">
-                        <button class="btn-outline" onclick="closeDetailModal()">Close</button>
+                    <div class="gm-ft">
+                        <button class="gm-btn-cancel" onclick="closeDetailModal()">Close</button>
                     </div>
 
                 </div>
             </div>`;
 
         } catch (e) {
-            document.getElementById('reqDetailRoot').innerHTML = `
-            <div class="modal" onclick="if(event.target===this)closeDetailModal()">
-                <div class="modal-content">
-                    <p style="color:var(--danger);font-size:13px;">Failed to load: ${e.message}</p>
-                    <div class="modal-actions">
-                        <button class="btn-outline" onclick="closeDetailModal()">Close</button>
+            document.getElementById('globalModalRoot').innerHTML = `
+            <div class="gm-bd" onclick="if(event.target===this)closeDetailModal()">
+                <div class="gm-box gm-box-sm">
+                    <div class="gm-hd"><h3>Error</h3><button class="gm-x" onclick="closeDetailModal()">✕</button></div>
+                    <div class="gm-body"><p style="color:#dc2626;font-size:13px;margin:0;">Failed to load: ${e.message}</p></div>
+                    <div class="gm-ft">
+                        <button class="gm-btn-cancel" onclick="closeDetailModal()">Close</button>
                     </div>
                 </div>
             </div>`;
@@ -659,7 +683,7 @@ $badgeClass = [
     }
 
     function closeDetailModal() {
-        document.getElementById('reqDetailRoot').innerHTML = '';
+        document.getElementById('globalModalRoot').innerHTML = '';
     }
 </script>
 

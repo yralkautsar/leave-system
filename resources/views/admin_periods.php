@@ -496,7 +496,21 @@
         <tbody>
             <?php if (empty($periods)): ?>
                 <tr>
-                    <td colspan="6" class="empty-row">No leave periods yet.</td>
+                    <td colspan="6" style="padding:0;">
+                        <div class="empty-state">
+                            <div class="empty-state-icon">
+                                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                    <rect x="3" y="4" width="18" height="18" rx="2" />
+                                    <line x1="16" y1="2" x2="16" y2="6" />
+                                    <line x1="8" y1="2" x2="8" y2="6" />
+                                    <line x1="3" y1="10" x2="21" y2="10" />
+                                </svg>
+                            </div>
+                            <div class="empty-state-title">No leave periods yet</div>
+                            <div class="empty-state-desc">Create a leave period first, then use <strong>Generate Balance</strong> to allocate leave days to all active employees.</div>
+                            <button class="btn-primary" onclick="openPerModal()">+ Create First Period</button>
+                        </div>
+                    </td>
                 </tr>
             <?php else: ?>
                 <?php foreach ($periods as $p):

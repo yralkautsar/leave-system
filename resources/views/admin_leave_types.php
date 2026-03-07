@@ -324,7 +324,19 @@
         <tbody>
             <?php if (empty($leaveTypes)): ?>
                 <tr>
-                    <td colspan="4" class="empty-row">No leave types yet.</td>
+                    <td colspan="4" style="padding:0;">
+                        <div class="empty-state">
+                            <div class="empty-state-icon">
+                                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                    <line x1="12" y1="1" x2="12" y2="23" />
+                                    <path d="M17 5H9.5a3.5 3.5 0 1 0 0 7h5a3.5 3.5 0 1 1 0 7H6" />
+                                </svg>
+                            </div>
+                            <div class="empty-state-title">No leave types yet</div>
+                            <div class="empty-state-desc">Leave types (e.g. Annual Leave, Sick Leave) define what employees can apply for. They're used when generating balances for a period.</div>
+                            <button class="btn-primary" onclick="openLtModal()">+ Add First Leave Type</button>
+                        </div>
+                    </td>
                 </tr>
             <?php else: ?>
                 <?php foreach ($leaveTypes as $t): ?>

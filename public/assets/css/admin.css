@@ -1115,3 +1115,237 @@ tbody tr:last-child td {
     gap: 6px;
     justify-content: flex-end;
 }
+
+
+
+/* ═══════════════════════════════════════════════════════════
+   GLOBAL MODAL SYSTEM  —  .gm-*
+   Used by ALL admin pages. Do NOT duplicate per-page.
+═══════════════════════════════════════════════════════════ */
+
+.gm-bd {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    animation: gmFadeIn .15s ease;
+}
+
+@keyframes gmFadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+
+.gm-box {
+    background: #fff;
+    border-radius: 16px;
+    width: 460px;
+    max-width: 95vw;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.18);
+    animation: gmSlideIn .18s ease;
+    overflow: hidden;
+}
+
+.gm-box-sm { width: 380px; }
+.gm-box-lg { width: 580px; }
+
+@keyframes gmSlideIn {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0);    }
+}
+
+.gm-hd {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 24px 16px;
+    border-bottom: 1px solid #e5e7eb;
+    flex-shrink: 0;
+}
+
+.gm-hd h3 {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.gm-x {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    border: none;
+    background: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #94a3b8;
+    font-size: 18px;
+    line-height: 1;
+    transition: background .12s, color .12s;
+    flex-shrink: 0;
+}
+
+.gm-x:hover { background: #f1f5f9; color: #374151; }
+
+.gm-body {
+    padding: 20px 24px;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.gm-ft {
+    padding: 14px 24px;
+    border-top: 1px solid #e5e7eb;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    flex-shrink: 0;
+}
+
+/* Form fields inside modal */
+.gm-fg {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    margin-bottom: 16px;
+}
+
+.gm-fg:last-child { margin-bottom: 0; }
+
+.gm-fg label {
+    font-size: 11.5px;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+}
+
+.gm-fg input,
+.gm-fg select,
+.gm-fg textarea {
+    padding: 10px 12px;
+    border: 1.5px solid #e5e7eb;
+    border-radius: 9px;
+    font-size: 13.5px;
+    color: #0f172a;
+    outline: none;
+    width: 100%;
+    box-sizing: border-box;
+    font-family: inherit;
+    transition: border-color .15s, box-shadow .15s;
+}
+
+.gm-fg input:focus,
+.gm-fg select:focus,
+.gm-fg textarea:focus {
+    border-color: #f97316;
+    box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.12);
+}
+
+.gm-fg .gm-hint {
+    font-size: 11.5px;
+    color: #94a3b8;
+    line-height: 1.5;
+}
+
+.gm-grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+}
+
+/* Buttons */
+.gm-btn-cancel {
+    padding: 9px 20px;
+    border-radius: 9px;
+    font-size: 13px;
+    font-weight: 500;
+    border: 1px solid #e5e7eb;
+    background: #fff;
+    color: #374151;
+    cursor: pointer;
+    transition: background .12s;
+}
+.gm-btn-cancel:hover { background: #f8fafc; }
+
+.gm-btn-save {
+    padding: 9px 22px;
+    border-radius: 9px;
+    font-size: 13px;
+    font-weight: 600;
+    border: none;
+    background: #f97316;
+    color: #fff;
+    cursor: pointer;
+    transition: background .12s, transform .12s, box-shadow .12s;
+}
+.gm-btn-save:hover {
+    background: #ea580c;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(249, 115, 22, 0.25);
+}
+
+.gm-btn-danger {
+    padding: 9px 22px;
+    border-radius: 9px;
+    font-size: 13px;
+    font-weight: 600;
+    border: none;
+    background: #dc2626;
+    color: #fff;
+    cursor: pointer;
+    transition: background .12s;
+}
+.gm-btn-danger:hover { background: #b91c1c; }
+
+
+/* ═══════════════════════════════════════════════════════════
+   GLOBAL EMPTY STATE  —  .empty-state
+   Use when a table/list has no data.
+═══════════════════════════════════════════════════════════ */
+
+.empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 48px 24px;
+    text-align: center;
+}
+
+.empty-state-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    background: #f8fafc;
+    border: 1px solid #e5e7eb;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 14px;
+    color: #94a3b8;
+}
+
+.empty-state-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 6px;
+}
+
+.empty-state-desc {
+    font-size: 13px;
+    color: #94a3b8;
+    max-width: 320px;
+    line-height: 1.6;
+    margin-bottom: 18px;
+}
+
+.empty-state-desc:last-child { margin-bottom: 0; }
