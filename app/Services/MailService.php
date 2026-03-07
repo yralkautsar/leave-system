@@ -114,10 +114,18 @@ class MailService
     {
         $db      = Database::connect();
         $subject = "[Leave Rejected] {$employee['name']} — {$request['leave_type']}";
+        $reasonBlock = !empty($request['rejection_reason'])
+            ? "<div style='margin-top:16px;padding:14px 18px;background:#fef2f2;border-radius:10px;border:1px solid #fca5a5;'>"
+            . "<p style='margin:0 0 4px;font-size:12px;font-weight:700;color:#991b1b;text-transform:uppercase;letter-spacing:.05em;'>Reason</p>"
+            . "<p style='margin:0;font-size:14px;color:#374151;'>" . htmlspecialchars($request['rejection_reason']) . "</p>"
+            . "</div>"
+            : '';
+
         $body    = self::template(
             "Leave Request Rejected",
             "<p>Your leave request has been <strong style='color:#dc2626;'>rejected</strong>.</p>"
                 . self::requestTable($request, $employee)
+                . $reasonBlock
                 . "<p style='color:#64748b;font-size:13px;margin-top:16px;'>Rejected by: {$adminName}</p>"
                 . "<p style='color:#64748b;font-size:13px;'>Please contact HR if you have any questions.</p>"
         );

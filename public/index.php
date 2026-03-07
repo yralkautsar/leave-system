@@ -303,6 +303,11 @@ if ($uri === '/leave-system/public/admin/requests') {
     exit;
 }
 
+if ($uri === '/leave-system/public/admin/requests/export' && $_SERVER['REQUEST_METHOD'] === 'GET') {
+    LeaveController::exportRequests();
+    exit;
+}
+
 if (preg_match('#^/leave-system/public/admin/requests/(\d+)/detail$#', $uri, $m)) {
     LeaveController::requestDetail((int)$m[1]);
     exit;

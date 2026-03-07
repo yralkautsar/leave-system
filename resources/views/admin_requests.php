@@ -118,6 +118,21 @@ $badgeClass = [
                 <a href="<?= reqUrl($currentStatus) ?>" class="btn-outline">Clear</a>
             <?php endif; ?>
 
+            <a href="/leave-system/public/admin/requests/export?<?= http_build_query(array_filter([
+                                                                    'status'     => $currentStatus,
+                                                                    'search'     => $currentSearch,
+                                                                    'leave_type' => $currentType,
+                                                                    'date_from'  => $currentFrom,
+                                                                    'date_to'    => $currentTo,
+                                                                ])) ?>" class="btn-outline req-export-btn" title="Export current results as CSV">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                    <polyline points="7 10 12 15 17 10" />
+                    <line x1="12" y1="15" x2="12" y2="3" />
+                </svg>
+                Export CSV
+            </a>
+
         </div>
 
     </form>
@@ -243,11 +258,11 @@ $badgeClass = [
                                         <button class="btn-outline-success">Approve</button>
                                     </form>
 
-                                    <form method="POST" action="/leave-system/public/reject" style="display:inline;">
-                                        <input type="hidden" name="id" value="<?= $r['id'] ?>">
-                                        <input type="hidden" name="_from" value="requests">
-                                        <button class="btn-outline-danger">Reject</button>
-                                    </form>
+                                    <button
+                                        class="btn-outline-danger"
+                                        onclick="openRejectModal(<?= $r['id'] ?>)">
+                                        Reject
+                                    </button>
 
                                 <?php elseif ($r['status'] === 'approved'): ?>
 
@@ -535,6 +550,22 @@ $badgeClass = [
         font-size: 12px;
         padding: 6px 10px;
     }
+
+    .req-export-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 13px;
+        white-space: nowrap;
+        color: #16a34a;
+        border-color: #86efac;
+    }
+
+    .req-export-btn:hover {
+        background: #f0fdf4;
+        border-color: #16a34a;
+        color: #15803d;
+    }
 </style>
 
 <!-- ══ DETAIL MODAL ══ -->
@@ -667,6 +698,11 @@ $badgeClass = [
                                     <div class="det-label">Email</div>
                                     <div class="det-value">${data.employee_email}</div>
                                 </div>` : ''}
+                                ${data.rejection_reason ? `
+                                <div class="det-item" style="grid-column:1/-1;">
+                                    <div class="det-label">Rejection Reason</div>
+                                    <div class="det-value" style="color:#dc2626;">${data.rejection_reason}</div>
+                                </div>` : ''}
                             </div>
                         </div>
 
@@ -677,10 +713,7 @@ $badgeClass = [
                     <!-- Footer -->
                     <div class="gm-ft">
                         ${data.status === 'pending' ? `
-                        <form method="POST" action="/leave-system/public/reject" style="margin:0;">
-                            <input type="hidden" name="id" value="${data.id}">
-                            <button class="gm-btn-danger" onclick="closeDetailModal()">Reject</button>
-                        </form>
+                        <button class="gm-btn-danger" onclick="closeDetailModal();openRejectModal(${data.id})">Reject</button>
                         <form method="POST" action="/leave-system/public/approve" style="margin:0;">
                             <input type="hidden" name="id" value="${data.id}">
                             <button class="gm-btn-save" style="background:#16a34a;" onclick="closeDetailModal()">Approve</button>
@@ -707,6 +740,47 @@ $badgeClass = [
 
     function closeDetailModal() {
         document.getElementById('globalModalRoot').innerHTML = '';
+    }
+
+    /* ── Reject reason modal ───────────────────────── */
+    function openRejectModal(id) {
+        document.getElementById('globalModalRoot').innerHTML = `
+        <div class="gm-bd" onclick="if(event.target===this)closeGM()">
+            <div class="gm-box gm-box-sm">
+                <div class="gm-hd">
+                    <h3>Reject Leave Request</h3>
+                    <button type="button" class="gm-x" onclick="closeGM()">✕</button>
+                </div>
+                <form method="POST" action="/leave-system/public/reject">
+                    <input type="hidden" name="id" value="${id}">
+                    <input type="hidden" name="_from" value="requests">
+                    <div class="gm-body">
+                        <p style="margin:0 0 14px;font-size:13.5px;color:#374151;">
+                            Optionally provide a reason — this will be included in the notification email to the employee.
+                        </p>
+                        <div class="gm-fg">
+                            <label for="rejectReason">Reason <span style="color:#94a3b8;font-weight:400;">(optional)</span></label>
+                            <textarea
+                                id="rejectReason"
+                                name="rejection_reason"
+                                rows="3"
+                                placeholder="e.g. Insufficient team coverage on those dates..."
+                                style="padding:10px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13.5px;resize:vertical;outline:none;width:100%;box-sizing:border-box;font-family:inherit;transition:.15s;"
+                                onfocus="this.style.borderColor='#f97316';this.style.boxShadow='0 0 0 3px rgba(249,115,22,0.12)'"
+                                onblur="this.style.borderColor='#e5e7eb';this.style.boxShadow='none'"
+                            ></textarea>
+                        </div>
+                    </div>
+                    <div class="gm-ft">
+                        <button type="button" class="gm-btn-cancel" onclick="closeGM()">Cancel</button>
+                        <button type="submit" class="gm-btn-danger">Confirm Reject</button>
+                    </div>
+                </form>
+            </div>
+        </div>`;
+
+        // Focus textarea after render
+        setTimeout(() => document.getElementById('rejectReason')?.focus(), 50);
     }
 </script>
 

@@ -12,7 +12,7 @@ $today     = date('l, d F Y');
 ══════════════════════════════════════════ -->
 <div class="dash-greeting">
     <div>
-        <h2 class="dash-greeting-title"><?= $greeting ?>, <?= htmlspecialchars($adminName) ?></h2>
+        <h2 class="dash-greeting-title"><?= $greeting ?>, <?= htmlspecialchars($adminName) ?> 👋</h2>
         <p class="subtext"><?= $today ?></p>
     </div>
     <a href="/leave-system/public/admin/requests" class="btn-outline" style="flex-shrink:0;font-size:13px;">
@@ -154,10 +154,12 @@ $today     = date('l, d F Y');
                                     <input type="hidden" name="id" value="<?= $r['id'] ?>">
                                     <button class="btn-outline-success" style="font-size:12px;padding:5px 11px;">Approve</button>
                                 </form>
-                                <form method="POST" action="/leave-system/public/reject" style="display:inline;">
-                                    <input type="hidden" name="id" value="<?= $r['id'] ?>">
-                                    <button class="btn-outline-danger" style="font-size:12px;padding:5px 11px;">Reject</button>
-                                </form>
+                                <button
+                                    class="btn-outline-danger"
+                                    style="font-size:12px;padding:5px 11px;"
+                                    onclick="openRejectModal(<?= $r['id'] ?>)">
+                                    Reject
+                                </button>
                             </div>
 
                         </div>
@@ -578,6 +580,45 @@ function _timeDiff(string $dt): string
         }
     }
 </style>
+
+<script>
+    function openRejectModal(id) {
+        document.getElementById('globalModalRoot').innerHTML = `
+        <div class="gm-bd" onclick="if(event.target===this)closeGM()">
+            <div class="gm-box gm-box-sm">
+                <div class="gm-hd">
+                    <h3>Reject Leave Request</h3>
+                    <button type="button" class="gm-x" onclick="closeGM()">✕</button>
+                </div>
+                <form method="POST" action="/leave-system/public/reject">
+                    <input type="hidden" name="id" value="${id}">
+                    <div class="gm-body">
+                        <p style="margin:0 0 14px;font-size:13.5px;color:#374151;">
+                            Optionally provide a reason — this will be included in the notification email.
+                        </p>
+                        <div class="gm-fg">
+                            <label for="rejectReasonDash">Reason <span style="color:#94a3b8;font-weight:400;">(optional)</span></label>
+                            <textarea
+                                id="rejectReasonDash"
+                                name="rejection_reason"
+                                rows="3"
+                                placeholder="e.g. Insufficient team coverage..."
+                                style="padding:10px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13.5px;resize:vertical;outline:none;width:100%;box-sizing:border-box;font-family:inherit;transition:.15s;"
+                                onfocus="this.style.borderColor='#f97316';this.style.boxShadow='0 0 0 3px rgba(249,115,22,0.12)'"
+                                onblur="this.style.borderColor='#e5e7eb';this.style.boxShadow='none'"
+                            ></textarea>
+                        </div>
+                    </div>
+                    <div class="gm-ft">
+                        <button type="button" class="gm-btn-cancel" onclick="closeGM()">Cancel</button>
+                        <button type="submit" class="gm-btn-danger">Confirm Reject</button>
+                    </div>
+                </form>
+            </div>
+        </div>`;
+        setTimeout(() => document.getElementById('rejectReasonDash')?.focus(), 50);
+    }
+</script>
 
 <?php
 $content = ob_get_clean();

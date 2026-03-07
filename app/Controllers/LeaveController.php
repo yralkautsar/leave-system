@@ -352,6 +352,8 @@ class LeaveController
         self::authorizeAdmin();
         $db = Database::connect();
 
+        $reason = trim($_POST['rejection_reason'] ?? '');
+
         // Fetch before update so we have employee_id and leave_type_id
         $stmt = $db->prepare("SELECT * FROM leave_requests WHERE id = :id AND status = 'pending'");
         $stmt->execute(['id' => $id]);
@@ -359,14 +361,16 @@ class LeaveController
 
         $stmt = $db->prepare("
             UPDATE leave_requests
-            SET status      = 'rejected',
-                approved_by = :admin,
-                approved_at = NOW()
+            SET status           = 'rejected',
+                approved_by      = :admin,
+                approved_at      = NOW(),
+                rejection_reason = :reason
             WHERE id = :id AND status = 'pending'
         ");
         $stmt->execute([
-            'id'    => $id,
-            'admin' => $_SESSION['user']['id']
+            'id'     => $id,
+            'admin'  => $_SESSION['user']['id'],
+            'reason' => $reason ?: null,
         ]);
 
         // ── Email notification ──
@@ -388,10 +392,11 @@ class LeaveController
                 $leaveTypeName = $ltStmt->fetchColumn();
 
                 $emailRequest = [
-                    'leave_type' => $leaveTypeName,
-                    'start_date' => $request['start_date'],
-                    'end_date'   => $request['end_date'],
-                    'total_days' => $request['total_days'],
+                    'leave_type'       => $leaveTypeName,
+                    'start_date'       => $request['start_date'],
+                    'end_date'         => $request['end_date'],
+                    'total_days'       => $request['total_days'],
+                    'rejection_reason' => $reason,
                 ];
 
                 MailService::notifyLeaveRejected($emailRequest, $employee, $_SESSION['user']['name']);
@@ -399,6 +404,8 @@ class LeaveController
                 // Silent
             }
         }
+
+        $_SESSION['success'] = "Request rejected.";
 
         $redirect = ($_POST['_from'] ?? '') === 'requests'
             ? '/leave-system/public/admin/requests' . (isset($_SERVER['HTTP_REFERER']) ? '?' . parse_url($_SERVER['HTTP_REFERER'], PHP_URL_QUERY) : '')
@@ -428,6 +435,7 @@ class LeaveController
                 lr.status,
                 lr.created_at,
                 lr.approved_at,
+                lr.rejection_reason,
                 u.name          AS employee_name,
                 u.email         AS employee_email,
                 u.join_date,
@@ -800,7 +808,50 @@ class LeaveController
             'join'  => $_POST['join_date'],
         ]);
 
-        $_SESSION['success'] = "User " . htmlspecialchars(trim($_POST['name'])) . " added.";
+        $newUserId  = (int)$db->lastInsertId();
+        $newJoin    = $_POST['join_date'];
+
+        // ── Auto-generate leave balances for all currently active periods ──
+        try {
+            $leaveTypes = $db->query("SELECT * FROM leave_types WHERE default_days > 0")
+                ->fetchAll(PDO::FETCH_ASSOC);
+
+            $activePeriodsStmt = $db->prepare("
+                SELECT * FROM leave_periods
+                WHERE start_date <= CURDATE() AND end_date >= CURDATE()
+            ");
+            $activePeriodsStmt->execute();
+            $activePeriods = $activePeriodsStmt->fetchAll(PDO::FETCH_ASSOC);
+
+            $balancesCreated = 0;
+
+            foreach ($activePeriods as $period) {
+                foreach ($leaveTypes as $type) {
+                    $db->prepare("
+                        INSERT IGNORE INTO leave_balances
+                        (employee_id, leave_period_id, leave_type_id, total_days, remaining_days, used_days)
+                        VALUES (:emp, :period, :type, :days, :days, 0)
+                    ")->execute([
+                        'emp'    => $newUserId,
+                        'period' => $period['id'],
+                        'type'   => $type['id'],
+                        'days'   => $type['default_days'],
+                    ]);
+                    $balancesCreated++;
+                }
+            }
+
+            $msg = "User " . htmlspecialchars(trim($_POST['name'])) . " added.";
+            if ($balancesCreated > 0) {
+                $msg .= " {$balancesCreated} leave balance(s) generated for active period(s).";
+            }
+            $_SESSION['success'] = $msg;
+        } catch (Exception $e) {
+            // Balance generation failure must not block user creation
+            $_SESSION['success'] = "User " . htmlspecialchars(trim($_POST['name'])) . " added.";
+            $_SESSION['warning'] = "Balance auto-generation failed: " . $e->getMessage();
+        }
+
         header("Location: /leave-system/public/admin/users");
         exit;
     }
@@ -1597,6 +1648,119 @@ class LeaveController
         exit;
     }
 
+
+    public static function exportRequests()
+    {
+        self::authorizeAdmin();
+        $db = Database::connect();
+
+        $status  = $_GET['status']     ?? '';
+        $search  = $_GET['search']     ?? '';
+        $type    = $_GET['leave_type'] ?? '';
+        $from    = $_GET['date_from']  ?? '';
+        $to      = $_GET['date_to']    ?? '';
+
+        $query = "
+            SELECT
+                u.name          AS employee,
+                d.name          AS department,
+                lt.name         AS leave_type,
+                lr.start_date,
+                lr.end_date,
+                lr.total_days,
+                lr.duration_type,
+                lr.status,
+                lr.rejection_reason,
+                lr.created_at,
+                lp.name         AS period,
+                adm.name        AS processed_by,
+                lr.approved_at  AS processed_at
+            FROM leave_requests lr
+            JOIN users u              ON lr.employee_id     = u.id
+            JOIN leave_types lt       ON lr.leave_type_id   = lt.id
+            LEFT JOIN departments d   ON u.department_id    = d.id
+            LEFT JOIN leave_periods lp ON lr.leave_period_id = lp.id
+            LEFT JOIN users adm       ON lr.approved_by     = adm.id
+            WHERE 1=1
+        ";
+
+        $params = [];
+
+        if ($status) {
+            $query .= " AND lr.status = :status";
+            $params['status'] = $status;
+        }
+        if ($search) {
+            $query .= " AND u.name LIKE :search";
+            $params['search'] = "%{$search}%";
+        }
+        if ($type) {
+            $query .= " AND lt.id = :type";
+            $params['type']   = $type;
+        }
+        if ($from) {
+            $query .= " AND lr.start_date >= :from";
+            $params['from'] = $from;
+        }
+        if ($to) {
+            $query .= " AND lr.start_date <= :to";
+            $params['to']   = $to;
+        }
+
+        $query .= " ORDER BY lr.created_at DESC";
+
+        $stmt = $db->prepare($query);
+        $stmt->execute($params);
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        $filename = 'leave_requests_' . date('Ymd_His') . '.csv';
+
+        header('Content-Type: text/csv; charset=UTF-8');
+        header('Content-Disposition: attachment; filename="' . $filename . '"');
+        header('Pragma: no-cache');
+        header('Expires: 0');
+
+        $out = fopen('php://output', 'w');
+        // UTF-8 BOM for Excel compatibility
+        fputs($out, "ï»¿");
+
+        fputcsv($out, [
+            'Employee',
+            'Department',
+            'Leave Type',
+            'Start Date',
+            'End Date',
+            'Total Days',
+            'Duration',
+            'Status',
+            'Rejection Reason',
+            'Submitted At',
+            'Period',
+            'Processed By',
+            'Processed At',
+        ]);
+
+        foreach ($rows as $r) {
+            fputcsv($out, [
+                $r['employee'],
+                $r['department']   ?? '',
+                $r['leave_type'],
+                $r['start_date'],
+                $r['end_date'],
+                $r['total_days'],
+                $r['duration_type'] === 'half' ? 'Half Day' : 'Full Day',
+                ucfirst($r['status']),
+                $r['rejection_reason'] ?? '',
+                $r['created_at'],
+                $r['period']       ?? '',
+                $r['processed_by'] ?? '',
+                $r['processed_at'] ?? '',
+            ]);
+        }
+
+        fclose($out);
+        exit;
+    }
 
     public static function requests()
     {
