@@ -655,7 +655,20 @@ $periods    = $periods    ?? [];
         <h2 style="margin:0 0 4px;">Leave Balances</h2>
         <p class="subtext" style="margin:0;">View and adjust employee leave allocations per period</p>
     </div>
-    <a href="/leave-system/public/admin/periods" class="btn-outline" style="font-size:13px;">← Back to Periods</a>
+    <div style="display:flex;gap:10px;align-items:center;">
+        <form method="POST" action="/leave-system/public/admin/balance-sync"
+            onsubmit="return confirm('Recalculate remaining_days = total_days − used_days for ALL balances?\n\nThis is safe to run anytime.')">
+            <button type="submit" class="btn-outline" style="font-size:13px;" title="Force-sync remaining = total − used">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="vertical-align:middle;margin-right:4px;">
+                    <polyline points="23 4 23 10 17 10" />
+                    <polyline points="1 20 1 14 7 14" />
+                    <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15" />
+                </svg>
+                Sync Balances
+            </button>
+        </form>
+        <a href="/leave-system/public/admin/periods" class="btn-outline" style="font-size:13px;">← Back to Periods</a>
+    </div>
 </div>
 
 <!-- ── Flash ────────────────────────────────────────── -->

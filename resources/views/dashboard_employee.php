@@ -439,7 +439,7 @@ $userName = explode(' ', $_SESSION['user']['name'])[0];
 <!-- HERO -->
 <div class="ed-hero">
     <div class="ed-hero-text">
-        <h2>Hello, <?= htmlspecialchars($userName) ?></h2>
+        <h2>Hello, <?= htmlspecialchars($userName) ?> 👋</h2>
         <p>Here's your leave overview for today.</p>
     </div>
     <a href="/leave-system/public/leave" class="ed-hero-btn">
@@ -489,8 +489,9 @@ $userName = explode(' ', $_SESSION['user']['name'])[0];
         <?php foreach ($balances as $b):
             $pct   = $b['total_days'] > 0 ? round(($b['remaining_days'] / $b['total_days']) * 100) : 0;
             $low   = $pct <= 25 ? 'low' : '';
+            $href  = '/leave-system/public/my-data?tab=history&type=' . urlencode($b['leave_type']);
         ?>
-            <div class="ed-bal-card">
+            <a href="<?= $href ?>" class="ed-bal-card" style="text-decoration:none;color:inherit;">
                 <div class="ed-bal-period">
                     <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                         <rect x="3" y="4" width="18" height="18" rx="2" />
@@ -509,7 +510,8 @@ $userName = explode(' ', $_SESSION['user']['name'])[0];
                     <div class="ed-bal-bar-fill <?= $low ?>" style="width:<?= $pct ?>%;"></div>
                 </div>
                 <div class="ed-bal-meta"><?= (float)$b['used_days'] ?> used &middot; <?= (float)$b['total_days'] ?> total</div>
-            </div>
+                <div style="font-size:11px;color:#f97316;margin-top:8px;font-weight:600;">View history →</div>
+            </a>
         <?php endforeach; ?>
     <?php else: ?>
         <div class="ed-bal-empty">No leave balance allocated for the current period.</div>

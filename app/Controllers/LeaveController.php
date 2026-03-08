@@ -61,6 +61,23 @@ class LeaveController
         $stmt->execute(['id' => $userId, 's' => $monthStart, 'e' => $monthEnd]);
         $myLeaves = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
+        // Team leaves — same department, other employees, approved only
+        $stmt = $db->prepare("
+            SELECT lr.start_date, lr.end_date, u.name AS employee_name, lt.name AS leave_type
+            FROM leave_requests lr
+            JOIN users u ON lr.employee_id = u.id
+            JOIN leave_types lt ON lr.leave_type_id = lt.id
+            WHERE lr.employee_id != :id
+            AND   lr.status = 'approved'
+            AND   lr.start_date <= :e
+            AND   lr.end_date   >= :s
+            AND   u.department_id = (SELECT department_id FROM users WHERE id = :id2)
+            AND   u.department_id IS NOT NULL
+            ORDER BY lr.start_date ASC
+        ");
+        $stmt->execute(['id' => $userId, 'id2' => $userId, 's' => $monthStart, 'e' => $monthEnd]);
+        $teamLeaves = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
         // Employee's work schedule (weekday numbers, ISO: 1=Mon..7=Sun)
         $stmt = $db->prepare("
             SELECT wsd.weekday
@@ -299,7 +316,11 @@ class LeaveController
             // Silent — email failure must not block submission
         }
 
-        $_SESSION['success'] = "Leave request submitted successfully.";
+        $fmtStart = date('d M Y', strtotime($startDate));
+        $fmtEnd   = date('d M Y', strtotime($endDate));
+        $_SESSION['success'] = "Leave request submitted — {$fmtStart}" .
+            ($startDate !== $endDate ? " to {$fmtEnd}" : '') .
+            " ({$totalDays} day" . ($totalDays != 1 ? 's' : '') . "). HR has been notified.";
         header("Location: /leave-system/public/dashboard");
         exit;
     }
@@ -1677,6 +1698,27 @@ class LeaveController
             'search' => $_POST['search_filter']  ?? '',
         ]));
         header("Location: /leave-system/public/admin/balances" . ($qs ? "?{$qs}" : ""));
+        exit;
+    }
+
+    /* Recalculate remaining_days = total_days - used_days for all balances */
+    public static function syncBalances()
+    {
+        self::authorizeAdmin();
+        $db = Database::connect();
+
+        try {
+            $stmt = $db->query("
+                UPDATE leave_balances
+                SET remaining_days = GREATEST(0, total_days - used_days)
+            ");
+            $affected = $stmt->rowCount();
+            $_SESSION['success'] = "Balance sync complete — {$affected} record(s) recalculated.";
+        } catch (Exception $e) {
+            $_SESSION['error'] = "Sync failed: " . $e->getMessage();
+        }
+
+        header("Location: /leave-system/public/admin/balances");
         exit;
     }
 

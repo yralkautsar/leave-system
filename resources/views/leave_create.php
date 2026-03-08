@@ -216,6 +216,21 @@
         background: #f97316;
     }
 
+    .lc-team-badge {
+        font-size: 9px;
+        font-weight: 700;
+        background: #ede9fe;
+        color: #6d28d9;
+        border-radius: 4px;
+        padding: 1px 4px;
+        margin-top: 2px;
+        text-align: center;
+        line-height: 1.4;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
     .lc-day.weekend {
         background: #f1f5f9;
         cursor: default;
@@ -561,6 +576,7 @@ $month      = $month      ?? date('Y-m');
 $monthStart = $monthStart ?? ($month . '-01');
 $holidays   = $holidays   ?? [];
 $myLeaves   = $myLeaves   ?? [];
+$teamLeaves = $teamLeaves ?? [];
 $workDays   = $workDays   ?? [1, 2, 3, 4, 5];
 $leaveTypes = $leaveTypes ?? [];
 
@@ -572,13 +588,24 @@ $today       = date('Y-m-d');
 $holidayMap = [];
 foreach ($holidays as $h) $holidayMap[$h['date']] = $h['name'];
 
-// Build leave coverage map: date => [status, ...]
+// Build own leave map: date => [status, ...]
 $leaveDates = [];
 foreach ($myLeaves as $l) {
     $cur = new DateTime($l['start_date']);
     $end = new DateTime($l['end_date']);
     while ($cur <= $end) {
         $leaveDates[$cur->format('Y-m-d')][] = $l['status'];
+        $cur->modify('+1 day');
+    }
+}
+
+// Build team leave map: date => [employee_name, ...]
+$teamDates = [];
+foreach ($teamLeaves as $tl) {
+    $cur = new DateTime($tl['start_date']);
+    $end = new DateTime($tl['end_date']);
+    while ($cur <= $end) {
+        $teamDates[$cur->format('Y-m-d')][] = $tl['employee_name'];
         $cur->modify('+1 day');
     }
 }
@@ -640,21 +667,26 @@ $next = date('Y-m', strtotime('+1 month', strtotime($monthStart)));
                     $isWknd  = !in_array($dow, $workDays);
                     $isHol   = isset($holidayMap[$date]);
                     $hasLeave = isset($leaveDates[$date]);
+                    $hasTeam = isset($teamDates[$date]);
 
                     $classes = ['lc-day'];
                     if ($isToday)  $classes[] = 'today';
                     if ($isWknd)   $classes[] = 'weekend';
                     if ($isHol)    $classes[] = 'is-holiday';
                     if ($hasLeave) $classes[] = 'has-leave';
+                    if ($hasTeam)  $classes[] = 'has-team';
+
+                    $teamNames = $hasTeam ? htmlspecialchars(implode(',', $teamDates[$date])) : '';
 
                     $dataAttrs  = "data-date=\"{$date}\"";
                     $dataAttrs .= " data-weekend=\"" . ($isWknd ? '1' : '0') . "\"";
                     $dataAttrs .= " data-holiday=\"" . ($isHol ? htmlspecialchars($holidayMap[$date]) : '') . "\"";
+                    $dataAttrs .= " data-team=\"{$teamNames}\"";
 
                     echo "<div class=\"" . implode(' ', $classes) . "\" {$dataAttrs} onclick=\"selectDay(this)\">";
                     echo "<div class=\"lc-day-num\">{$day}</div>";
 
-                    // Leave dots
+                    // Own leave dots
                     if ($hasLeave) {
                         echo '<div class="lc-dots">';
                         foreach (array_unique($leaveDates[$date]) as $status) {
@@ -663,6 +695,12 @@ $next = date('Y-m', strtotime('+1 month', strtotime($monthStart)));
                             }
                         }
                         echo '</div>';
+                    }
+
+                    // Team leave indicator
+                    if ($hasTeam) {
+                        $count = count($teamDates[$date]);
+                        echo "<div class=\"lc-team-badge\" title=\"" . htmlspecialchars(implode(', ', array_unique($teamDates[$date]))) . " on leave\">{$count} away</div>";
                     }
 
                     // Holiday badge
@@ -725,6 +763,14 @@ $next = date('Y-m', strtotime('+1 month', strtotime($monthStart)));
                             <line x1="12" y1="17" x2="12.01" y2="17" />
                         </svg>
                         <span id="panelWarnText"></span>
+                    </div>
+
+                    <!-- Team on leave indicator -->
+                    <div id="panelTeam" style="display:none;background:#f5f3ff;border:1.5px solid #ddd6fe;border-radius:8px;padding:10px 12px;margin-bottom:14px;">
+                        <div style="font-size:11px;font-weight:700;color:#6d28d9;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;">
+                            👥 Team on leave these dates
+                        </div>
+                        <div id="panelTeamList" style="font-size:12.5px;color:#374151;"></div>
                     </div>
 
                     <form method="POST" action="/leave-system/public/leave-store" id="leaveForm">
@@ -830,6 +876,13 @@ $next = date('Y-m', strtotime('+1 month', strtotime($monthStart)));
                         <div class="lc-legend-desc">Grayed out — outside your schedule</div>
                     </div>
                 </div>
+                <div class="lc-legend-item">
+                    <div class="lc-legend-dot" style="background:#7c3aed;border-radius:3px;"></div>
+                    <div>
+                        <div class="lc-legend-label">Team Away</div>
+                        <div class="lc-legend-desc">Colleague from your dept on leave</div>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -849,6 +902,7 @@ $next = date('Y-m', strtotime('+1 month', strtotime($monthStart)));
                             'name'          => $lt['name'],
                             'remaining'     => (float)$lt['remaining_days'],
                         ], $leaveTypes))) ?>;
+    const TEAM_LEAVES = <?= json_encode(array_values($teamLeaves)) ?>;
 
     /* ──────────────────────────────────────────
        DATE HELPERS
@@ -1031,6 +1085,26 @@ $next = date('Y-m', strtotime('+1 month', strtotime($monthStart)));
             balVal.textContent = remaining + ' days';
         } else {
             balInfo.style.display = 'none';
+        }
+
+        // Team on leave — check who overlaps with selected range
+        const teamPanel = document.getElementById('panelTeam');
+        const teamList = document.getElementById('panelTeamList');
+        if (start && end && TEAM_LEAVES.length > 0) {
+            const overlapping = TEAM_LEAVES.filter(tl =>
+                tl.start_date <= end && tl.end_date >= start
+            );
+            if (overlapping.length > 0) {
+                const names = [...new Set(overlapping.map(tl => tl.employee_name))];
+                teamList.innerHTML = names.map(n =>
+                    `<div style="padding:2px 0;">· ${n}</div>`
+                ).join('');
+                teamPanel.style.display = 'block';
+            } else {
+                teamPanel.style.display = 'none';
+            }
+        } else {
+            teamPanel.style.display = 'none';
         }
 
         // Submit button state

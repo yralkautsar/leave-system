@@ -236,6 +236,18 @@ function isActive(string $path, string $match, bool $exact = false): string
 
             <!-- Content -->
             <div class="content">
+
+                <?php /* ── Global flash messages ── */
+                foreach (['success' => 'flash-success', 'error' => 'flash-error', 'warning' => 'flash-warning'] as $key => $cls):
+                    if (!empty($_SESSION[$key])): ?>
+                        <div class="<?= $cls ?> flash-msg" id="flashMsg">
+                            <span><?= htmlspecialchars($_SESSION[$key]) ?></span>
+                            <button onclick="this.parentElement.remove()" class="flash-close">×</button>
+                        </div>
+                <?php unset($_SESSION[$key]);
+                    endif;
+                endforeach; ?>
+
                 <?= $content ?>
             </div>
 
@@ -543,6 +555,67 @@ function isActive(string $path, string $match, bool $exact = false): string
             .sidebar {
                 display: none;
             }
+        }
+
+        /* ── Flash messages ── */
+        .flash-msg {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 13px 18px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-size: 13.5px;
+            font-weight: 500;
+            animation: flashIn .2s ease;
+        }
+
+        @keyframes flashIn {
+            from {
+                opacity: 0;
+                transform: translateY(-6px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .flash-success {
+            background: #f0fdf4;
+            border: 1.5px solid #86efac;
+            color: #166534;
+        }
+
+        .flash-error {
+            background: #fef2f2;
+            border: 1.5px solid #fca5a5;
+            color: #991b1b;
+        }
+
+        .flash-warning {
+            background: #fffbeb;
+            border: 1.5px solid #fcd34d;
+            color: #92400e;
+        }
+
+        .flash-close {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 18px;
+            line-height: 1;
+            padding: 0;
+            color: inherit;
+            opacity: .6;
+            flex-shrink: 0;
+            transition: opacity .12s;
+        }
+
+        .flash-close:hover {
+            opacity: 1;
         }
     </style>
 

@@ -12,7 +12,7 @@ $today     = date('l, d F Y');
 ══════════════════════════════════════════ -->
 <div class="dash-greeting">
     <div>
-        <h2 class="dash-greeting-title"><?= $greeting ?>, <?= htmlspecialchars($adminName) ?></h2>
+        <h2 class="dash-greeting-title"><?= $greeting ?>, <?= htmlspecialchars($adminName) ?> 👋</h2>
         <p class="subtext"><?= $today ?></p>
     </div>
     <a href="/leave-system/public/admin/requests" class="btn-outline" style="flex-shrink:0;font-size:13px;">
@@ -96,6 +96,44 @@ $today     = date('l, d F Y');
 
 
 <!-- ══════════════════════════════════════════
+     DEPARTMENT FILTER
+══════════════════════════════════════════ -->
+<?php
+$deptFilter = isset($_GET['dept']) && (int)$_GET['dept'] > 0 ? (int)$_GET['dept'] : null;
+$activeDeptName = '';
+if ($deptFilter) {
+    foreach ($departments as $d) {
+        if ($d['id'] == $deptFilter) {
+            $activeDeptName = $d['name'];
+            break;
+        }
+    }
+}
+?>
+<div class="dash-dept-bar">
+    <div class="dash-dept-label">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="flex-shrink:0;">
+            <rect x="2" y="7" width="20" height="14" rx="2" />
+            <path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2" />
+        </svg>
+        Showing:
+    </div>
+    <div class="dash-dept-pills">
+        <a href="/leave-system/public/dashboard"
+            class="dash-dept-pill <?= !$deptFilter ? 'active' : '' ?>">
+            All Departments
+        </a>
+        <?php foreach ($departments as $d): ?>
+            <a href="/leave-system/public/dashboard?dept=<?= $d['id'] ?>"
+                class="dash-dept-pill <?= $deptFilter == $d['id'] ? 'active' : '' ?>">
+                <?= htmlspecialchars($d['name']) ?>
+            </a>
+        <?php endforeach; ?>
+    </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════
      TWO-COLUMN BODY
 ══════════════════════════════════════════ -->
 <div class="dash-body">
@@ -107,7 +145,12 @@ $today     = date('l, d F Y');
             <div class="dash-card-head">
                 <div>
                     <h3 style="margin:0 0 3px;">Pending Requests</h3>
-                    <p class="subtext" style="margin:0;">Oldest first — needs your action</p>
+                    <p class="subtext" style="margin:0;">
+                        Oldest first — needs your action
+                        <?php if ($deptFilter): ?>
+                            <span class="dash-dept-chip"><?= htmlspecialchars($activeDeptName) ?></span>
+                        <?php endif; ?>
+                    </p>
                 </div>
                 <?php if ((int)$stats['pending'] > 15): ?>
                     <a href="/leave-system/public/admin/requests?status=pending" class="dash-see-all">
@@ -178,7 +221,12 @@ $today     = date('l, d F Y');
             <div class="dash-card-head">
                 <div>
                     <h3 style="margin:0 0 3px;">On Leave Today</h3>
-                    <p class="subtext" style="margin:0;"><?= date('d F Y') ?></p>
+                    <p class="subtext" style="margin:0;">
+                        <?= date('d F Y') ?>
+                        <?php if ($deptFilter): ?>
+                            <span class="dash-dept-chip"><?= htmlspecialchars($activeDeptName) ?></span>
+                        <?php endif; ?>
+                    </p>
                 </div>
                 <a href="/leave-system/public/calendar" class="dash-see-all">Calendar →</a>
             </div>
@@ -262,6 +310,70 @@ function _timeDiff(string $dt): string
     }
 
     /* ── Stat grid ────────────────────────────────── */
+    /* ── Department filter bar ── */
+    .dash-dept-bar {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+    }
+
+    .dash-dept-label {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 12px;
+        font-weight: 600;
+        color: #94a3b8;
+        white-space: nowrap;
+        flex-shrink: 0;
+    }
+
+    .dash-dept-pills {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+
+    .dash-dept-pill {
+        padding: 5px 12px;
+        border-radius: 999px;
+        font-size: 12px;
+        font-weight: 500;
+        border: 1.5px solid #e5e7eb;
+        background: #fff;
+        color: #374151;
+        text-decoration: none;
+        transition: all .15s ease;
+        white-space: nowrap;
+    }
+
+    .dash-dept-pill:hover {
+        border-color: #f97316;
+        color: #f97316;
+        background: #fff7ed;
+    }
+
+    .dash-dept-pill.active {
+        background: #f97316;
+        border-color: #f97316;
+        color: #fff;
+    }
+
+    .dash-dept-chip {
+        display: inline-block;
+        padding: 1px 8px;
+        border-radius: 999px;
+        font-size: 11px;
+        font-weight: 600;
+        background: #fff7ed;
+        color: #f97316;
+        border: 1px solid #fed7aa;
+        margin-left: 6px;
+        vertical-align: middle;
+    }
+
     .dash-stats {
         display: grid;
         grid-template-columns: repeat(5, 1fr);

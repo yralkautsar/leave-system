@@ -514,6 +514,19 @@ $activeTab = $_GET['tab'] ?? 'profile';
                 <option value="rejected">Rejected</option>
                 <option value="cancelled">Cancelled</option>
             </select>
+            <select id="histTypeFilter" onchange="filterHistory()">
+                <option value="">All Types</option>
+                <?php
+                $leaveTypeNames = array_unique(array_column($history, 'leave_type'));
+                sort($leaveTypeNames);
+                $urlType = $_GET['type'] ?? '';
+                foreach ($leaveTypeNames as $tn): ?>
+                    <option value="<?= htmlspecialchars($tn) ?>"
+                        <?= $tn === $urlType ? 'selected' : '' ?>>
+                        <?= htmlspecialchars($tn) ?>
+                    </option>
+                <?php endforeach; ?>
+            </select>
             <select id="histPeriodFilter" onchange="filterHistory()">
                 <option value="">All Periods</option>
                 <?php foreach (($periods ?? []) as $p): ?>
@@ -539,7 +552,9 @@ $activeTab = $_GET['tab'] ?? 'profile';
                 </thead>
                 <tbody>
                     <?php foreach ($history as $h): ?>
-                        <tr data-status="<?= $h['status'] ?>" data-period="<?= htmlspecialchars($h['period_name'] ?? '') ?>">
+                        <tr data-status="<?= $h['status'] ?>"
+                            data-type="<?= htmlspecialchars($h['leave_type']) ?>"
+                            data-period="<?= htmlspecialchars($h['period_name'] ?? '') ?>">
                             <td><?= htmlspecialchars($h['leave_type']) ?></td>
                             <td><?= date('d M Y', strtotime($h['start_date'])) ?></td>
                             <td><?= date('d M Y', strtotime($h['end_date'])) ?></td>
@@ -594,20 +609,28 @@ $activeTab = $_GET['tab'] ?? 'profile';
 
     function filterHistory() {
         const status = document.getElementById('histStatusFilter').value;
+        const type = document.getElementById('histTypeFilter').value;
         const period = document.getElementById('histPeriodFilter').value;
         const rows = document.querySelectorAll('#histTable tbody tr');
         let visible = 0;
         rows.forEach(row => {
             const matchStatus = !status || row.dataset.status === status;
+            const matchType = !type || row.dataset.type === type;
             const matchPeriod = !period || row.dataset.period === period;
-            const show = matchStatus && matchPeriod;
+            const show = matchStatus && matchType && matchPeriod;
             row.style.display = show ? '' : 'none';
             if (show) visible++;
         });
-        // Update count
         const countEl = document.querySelector('.md-hist-count');
         if (countEl) countEl.textContent = visible + ' total';
     }
+
+    // Auto-apply filters on page load (handles ?type= from dashboard link)
+    document.addEventListener('DOMContentLoaded', () => {
+        const hasFilter = document.getElementById('histTypeFilter')?.value ||
+            document.getElementById('histStatusFilter')?.value;
+        if (hasFilter) filterHistory();
+    });
 </script>
 
 <?php

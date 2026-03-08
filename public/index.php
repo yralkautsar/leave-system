@@ -241,6 +241,11 @@ if ($uri === '/leave-system/public/admin/balance-adjust' && $_SERVER['REQUEST_ME
     exit;
 }
 
+if ($uri === '/leave-system/public/admin/balance-sync' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    LeaveController::syncBalances();
+    exit;
+}
+
 if ($uri === '/leave-system/public/admin/balance-history' && $_SERVER['REQUEST_METHOD'] === 'GET') {
     LeaveController::balanceHistory();
     exit;

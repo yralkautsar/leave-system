@@ -280,8 +280,16 @@ class AuthController
             SELECT COUNT(*) FROM users WHERE role = 'employee' AND is_active = 1
         ")->fetchColumn();
 
+        // ── Departments list for filter dropdown ─────────────────
+        $departments = $db->query("
+            SELECT id, name FROM departments ORDER BY name ASC
+        ")->fetchAll(PDO::FETCH_ASSOC);
+
+        $deptFilter = isset($_GET['dept']) && (int)$_GET['dept'] > 0
+            ? (int)$_GET['dept'] : null;
+
         // ── Pending list for dashboard (oldest first, max 15) ─────
-        $pendingRequests = $db->query("
+        $pendingSql = "
             SELECT lr.id, lr.start_date, lr.end_date, lr.total_days, lr.created_at,
                    u.name  AS employee_name,
                    lt.name AS leave_type,
@@ -291,12 +299,19 @@ class AuthController
             JOIN leave_types lt ON lr.leave_type_id  = lt.id
             LEFT JOIN departments d ON u.department_id = d.id
             WHERE lr.status = 'pending'
-            ORDER BY lr.created_at ASC
-            LIMIT 15
-        ")->fetchAll(PDO::FETCH_ASSOC);
+        ";
+        $pendingParams = [];
+        if ($deptFilter) {
+            $pendingSql .= " AND u.department_id = :dept";
+            $pendingParams['dept'] = $deptFilter;
+        }
+        $pendingSql .= " ORDER BY lr.created_at ASC LIMIT 15";
+        $stmt = $db->prepare($pendingSql);
+        $stmt->execute($pendingParams);
+        $pendingRequests = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         // ── On leave today — detail list for right panel ──────────
-        $onLeaveTodayList = $db->query("
+        $onLeaveSql = "
             SELECT
                 u.name  AS employee_name,
                 lt.name AS leave_type,
@@ -310,8 +325,16 @@ class AuthController
             LEFT JOIN departments d ON u.department_id = d.id
             WHERE lr.status = 'approved'
             AND CURDATE() BETWEEN lr.start_date AND lr.end_date
-            ORDER BY lr.end_date ASC
-        ")->fetchAll(PDO::FETCH_ASSOC);
+        ";
+        $onLeaveParams = [];
+        if ($deptFilter) {
+            $onLeaveSql .= " AND u.department_id = :dept";
+            $onLeaveParams['dept'] = $deptFilter;
+        }
+        $onLeaveSql .= " ORDER BY lr.end_date ASC";
+        $stmt = $db->prepare($onLeaveSql);
+        $stmt->execute($onLeaveParams);
+        $onLeaveTodayList = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         require __DIR__ . '/../../resources/views/dashboard_admin.php';
     }
