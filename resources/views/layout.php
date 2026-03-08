@@ -176,11 +176,13 @@ function isActive(string $path, string $match, bool $exact = false): string
                     <span>Calendar</span>
                 </a>
 
-                <a href="/leave-system/public/admin/settings"
-                    class="nav-link <?= isActive($currentPath, 'settings') ?>">
-                    <?= icon('settings') ?>
-                    <span>Settings</span>
-                </a>
+                <?php if ($isAdmin): ?>
+                    <a href="/leave-system/public/admin/settings"
+                        class="nav-link <?= isActive($currentPath, 'settings') ?>">
+                        <?= icon('settings') ?>
+                        <span>Settings</span>
+                    </a>
+                <?php endif; ?>
 
             </nav>
 

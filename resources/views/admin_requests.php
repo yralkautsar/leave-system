@@ -665,7 +665,7 @@ $badgeClass = [
                                 </div>
                                 <div class="det-item">
                                     <div class="det-label">Duration</div>
-                                    <div class="det-value">${data.total_days} day${data.total_days>1?'s':''} · ${data.duration_type==='half'?'Half Day':'Full Day'}</div>
+                                    <div class="det-value">${data.total_days} day${data.total_days>1?'s':''} · ${data.duration_type==='half_am'?'Half Day AM':data.duration_type==='half_pm'?'Half Day PM':'Full Day'}</div>
                                 </div>
                                 <div class="det-item">
                                     <div class="det-label">Start Date</div>

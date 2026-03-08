@@ -415,7 +415,8 @@
     }
 
     .lc-fg input,
-    .lc-fg select {
+    .lc-fg select,
+    .lc-fg textarea {
         width: 100%;
         padding: 9px 12px;
         border: 1.5px solid #e5e7eb;
@@ -425,10 +426,12 @@
         box-sizing: border-box;
         background: white;
         transition: border-color .15s ease;
+        font-family: inherit;
     }
 
     .lc-fg input:focus,
-    .lc-fg select:focus {
+    .lc-fg select:focus,
+    .lc-fg textarea:focus {
         outline: none;
         border-color: #f97316;
         box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.1);
@@ -760,8 +763,17 @@ $next = date('Y-m', strtotime('+1 month', strtotime($monthStart)));
                             <label>Duration</label>
                             <select name="duration_type" id="fDuration" onchange="updatePreview()">
                                 <option value="full">Full Day</option>
-                                <option value="half">Half Day</option>
+                                <option value="half_am">Half Day AM &nbsp;(09:00 – 13:00)</option>
+                                <option value="half_pm">Half Day PM &nbsp;(14:00 – 18:00)</option>
                             </select>
+                        </div>
+
+                        <!-- Reason -->
+                        <div class="lc-fg">
+                            <label>Reason <span style="color:#94a3b8;font-weight:400;font-size:11px;">(optional)</span></label>
+                            <textarea name="reason" id="fReason" rows="3"
+                                placeholder="e.g. Family event, medical appointment..."
+                                style="resize:vertical;min-height:72px;width:100%;box-sizing:border-box;"></textarea>
                         </div>
 
                         <!-- Working days preview -->
@@ -897,7 +909,7 @@ $next = date('Y-m', strtotime('+1 month', strtotime($monthStart)));
             cur.setDate(cur.getDate() + 1);
         }
 
-        if (duration === 'half') return Math.max(0.5, +(count / 2).toFixed(1));
+        if (duration === 'half_am' || duration === 'half_pm') return Math.max(0.5, +(count / 2).toFixed(1));
         return count;
     }
 

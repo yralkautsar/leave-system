@@ -188,7 +188,7 @@ class LeaveController
         }
 
         // Half day: halve the working days, minimum 0.5
-        $totalDays = ($durationType === 'half')
+        $totalDays = (($durationType === 'half_am' || $durationType === 'half_pm'))
             ? max(0.5, round($workingDays / 2, 1))
             : (float)$workingDays;
 
@@ -252,9 +252,9 @@ class LeaveController
         // ── 6. Insert ──────────────────────────────────────────────────
         $stmt = $db->prepare("
             INSERT INTO leave_requests
-            (employee_id, leave_type_id, leave_period_id, start_date, end_date, duration_type, total_days, status, created_at)
+            (employee_id, leave_type_id, leave_period_id, start_date, end_date, duration_type, total_days, reason, status, created_at)
             VALUES
-            (:emp, :type, :period, :start, :end, :duration, :total, 'pending', NOW())
+            (:emp, :type, :period, :start, :end, :duration, :total, :reason, 'pending', NOW())
         ");
 
         $stmt->execute([
@@ -265,6 +265,7 @@ class LeaveController
             'end'      => $endDate,
             'duration' => $durationType,
             'total'    => $totalDays,
+            'reason'   => trim($_POST['reason'] ?? '') ?: null,
         ]);
 
         // ── 7. Email notification ──────────────────────────────────────
@@ -1961,7 +1962,7 @@ class LeaveController
                 $r['start_date'],
                 $r['end_date'],
                 $r['total_days'],
-                $r['duration_type'] === 'half' ? 'Half Day' : 'Full Day',
+                $r['duration_type'] === 'half_am' ? 'Half Day AM' : ($r['duration_type'] === 'half_pm' ? 'Half Day PM' : 'Full Day'),
                 ucfirst($r['status']),
                 $r['rejection_reason'] ?? '',
                 $r['created_at'],

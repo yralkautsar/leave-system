@@ -257,7 +257,7 @@ HTML;
         $name  = htmlspecialchars($emp['name']      ?? '');
         $dept  = htmlspecialchars($emp['department'] ?? '—');
         $type  = htmlspecialchars($r['leave_type']  ?? '');
-        $days  = (int)($r['total_days'] ?? 0);
+        $days  = (float)($r['total_days'] ?? 0);
 
         return <<<HTML
 <table width="100%" cellpadding="0" cellspacing="0" style="background:#f8fafc;border-radius:8px;border:1px solid #e5e7eb;margin-top:16px;font-size:14px;">
