@@ -338,6 +338,39 @@ if (
 }
 
 /* ==========================================================
+   COMP LEAVE CLAIMS – EMPLOYEE
+========================================================== */
+
+if ($uri === '/leave-system/public/comp-claim') {
+    LeaveController::compClaim();
+    exit;
+}
+
+if ($uri === '/leave-system/public/comp-claim/store' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    LeaveController::storeCompClaim();
+    exit;
+}
+
+/* ==========================================================
+   COMP LEAVE CLAIMS – ADMIN
+========================================================== */
+
+if ($uri === '/leave-system/public/admin/comp-claims') {
+    LeaveController::adminCompClaims();
+    exit;
+}
+
+if ($uri === '/leave-system/public/admin/comp-claims/approve' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    LeaveController::approveCompClaim((int)$_POST['id']);
+    exit;
+}
+
+if ($uri === '/leave-system/public/admin/comp-claims/reject' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    LeaveController::rejectCompClaim((int)$_POST['id']);
+    exit;
+}
+
+/* ==========================================================
    ADMIN – SETTINGS
 ========================================================== */
 

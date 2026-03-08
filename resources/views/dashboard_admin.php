@@ -92,6 +92,19 @@ $today     = date('l, d F Y');
         </div>
     </a>
 
+    <a href="/leave-system/public/admin/comp-claims" class="dstat dstat-purple" style="text-decoration:none;">
+        <div class="dstat-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
+                <polyline points="17 6 23 6 23 12" />
+            </svg>
+        </div>
+        <div>
+            <div class="dstat-value"><?= (int)($pendingCompClaims ?? 0) ?></div>
+            <div class="dstat-label">Pending Comp Claims</div>
+        </div>
+    </a>
+
 </div>
 
 
@@ -438,6 +451,11 @@ function _timeDiff(string $dt): string
     .dstat-slate .dstat-icon {
         background: #f8fafc;
         color: #475569;
+    }
+
+    .dstat-purple .dstat-icon {
+        background: #ede9fe;
+        color: #7c3aed;
     }
 
     .dstat-value {

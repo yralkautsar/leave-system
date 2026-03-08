@@ -142,6 +142,16 @@
         font-size: 13px;
     }
 
+    .ed-bal-comp {
+        border: 1.5px solid #ddd6fe;
+        background: linear-gradient(135deg, #faf5ff 0%, #ede9fe 100%);
+    }
+
+    .ed-bal-comp:hover {
+        border-color: #7c3aed;
+        box-shadow: 0 8px 20px rgba(124, 58, 237, 0.15);
+    }
+
     /* Stats */
     .ed-stats {
         display: grid;
@@ -501,6 +511,25 @@ $userName = explode(' ', $_SESSION['user']['name'])[0];
     <?php else: ?>
         <div class="ed-bal-empty">No leave balance allocated for the current period.</div>
     <?php endif; ?>
+
+    <?php if (isset($compBalance) && $compBalance > 0): ?>
+        <!-- Comp Leave balance card -->
+        <a href="/leave-system/public/comp-claim" class="ed-bal-card ed-bal-comp" style="text-decoration:none;color:inherit;">
+            <div class="ed-bal-period" style="color:#7c3aed;">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
+                    <polyline points="17 6 23 6 23 12" />
+                </svg>
+                <span>Floating · 6-month expiry</span>
+            </div>
+            <div class="ed-bal-type">Compensate Leave</div>
+            <div class="ed-bal-remaining" style="color:#7c3aed;">
+                <?= number_format($compBalance, 1) ?><span>days available</span>
+            </div>
+            <div style="font-size:11px;color:#7c3aed;margin-top:8px;font-weight:600;">View claims →</div>
+        </a>
+    <?php endif; ?>
+
 </div>
 
 <!-- STATS -->

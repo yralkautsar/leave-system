@@ -134,10 +134,11 @@ class LeaveController
 
         // Full leave history with period name
         $stmt = $db->prepare("
-            SELECT lr.*, lt.name AS leave_type, lp.name AS period_name
+            SELECT lr.*, lt.name AS leave_type,
+                   COALESCE(lp.name, 'Compensate Leave') AS period_name
             FROM leave_requests lr
             JOIN leave_types   lt ON lr.leave_type_id   = lt.id
-            JOIN leave_periods lp ON lr.leave_period_id = lp.id
+            LEFT JOIN leave_periods lp ON lr.leave_period_id = lp.id
             WHERE lr.employee_id = :id
             ORDER BY lr.created_at DESC
         ");
@@ -213,40 +214,67 @@ class LeaveController
             ? max(0.5, round($workingDays / 2, 1))
             : (float)$workingDays;
 
-        // ── 3. Server-side period resolution ──────────────────────────
-        // Find a period where the employee has balance AND start_date falls within
-        $stmt = $db->prepare("
-            SELECT lb.leave_period_id, lp.name AS period_name, lb.remaining_days
-            FROM leave_balances lb
-            JOIN leave_periods lp ON lb.leave_period_id = lp.id
-            WHERE lb.employee_id   = :emp
-            AND   lb.leave_type_id = :type
-            AND   lp.start_date   <= :start
-            AND   lp.end_date     >= :start
-            ORDER BY lp.start_date ASC
-            LIMIT 1
-        ");
-        $stmt->execute([
-            'emp'   => $empId,
-            'type'  => $leaveTypeId,
-            'start' => $startDate,
-        ]);
-        $periodRow = $stmt->fetch(PDO::FETCH_ASSOC);
+        // ── 3. Detect Compensate Leave ─────────────────────────────
+        $ltNameStmt = $db->prepare("SELECT name FROM leave_types WHERE id = :id");
+        $ltNameStmt->execute(['id' => $leaveTypeId]);
+        $leaveTypeName = (string)$ltNameStmt->fetchColumn();
+        $isCompLeave   = (stripos($leaveTypeName, 'compensat') !== false);
 
-        if (!$periodRow) {
-            $_SESSION['error'] = "No leave period found for the selected dates. Please contact HR.";
-            header("Location: /leave-system/public/leave");
-            exit;
-        }
+        if ($isCompLeave) {
+            // ── Comp leave: balance from comp_claims (floating, no period) ──
+            $availStmt = $db->prepare("
+                SELECT COALESCE(SUM(days_remaining), 0)
+                FROM comp_claims
+                WHERE employee_id = :emp
+                  AND status      = 'approved'
+                  AND expires_at  > CURDATE()
+            ");
+            $availStmt->execute(['emp' => $empId]);
+            $available = (float)$availStmt->fetchColumn();
 
-        $leavePeriodId = $periodRow['leave_period_id'];
-        $remaining     = (float)$periodRow['remaining_days'];
+            if ($available < $totalDays) {
+                $_SESSION['error'] = "Insufficient compensate leave balance. You have {$available} day(s) available.";
+                header("Location: /leave-system/public/leave");
+                exit;
+            }
 
-        // ── 4. Balance pre-check ───────────────────────────────────────
-        if ($remaining < $totalDays) {
-            $_SESSION['error'] = "Insufficient balance. You have {$remaining} day(s) remaining but this request requires {$totalDays} day(s).";
-            header("Location: /leave-system/public/leave");
-            exit;
+            $leavePeriodId = null;
+        } else {
+            // ── 3. Server-side period resolution ──────────────────────────
+            // Find a period where the employee has balance AND start_date falls within
+            $stmt = $db->prepare("
+                SELECT lb.leave_period_id, lp.name AS period_name, lb.remaining_days
+                FROM leave_balances lb
+                JOIN leave_periods lp ON lb.leave_period_id = lp.id
+                WHERE lb.employee_id   = :emp
+                AND   lb.leave_type_id = :type
+                AND   lp.start_date   <= :start
+                AND   lp.end_date     >= :start
+                ORDER BY lp.start_date ASC
+                LIMIT 1
+            ");
+            $stmt->execute([
+                'emp'   => $empId,
+                'type'  => $leaveTypeId,
+                'start' => $startDate,
+            ]);
+            $periodRow = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if (!$periodRow) {
+                $_SESSION['error'] = "No leave period found for the selected dates. Please contact HR.";
+                header("Location: /leave-system/public/leave");
+                exit;
+            }
+
+            $leavePeriodId = $periodRow['leave_period_id'];
+            $remaining     = (float)$periodRow['remaining_days'];
+
+            // ── 4. Balance pre-check ───────────────────────────────────────
+            if ($remaining < $totalDays) {
+                $_SESSION['error'] = "Insufficient balance. You have {$remaining} day(s) remaining but this request requires {$totalDays} day(s).";
+                header("Location: /leave-system/public/leave");
+                exit;
+            }
         }
 
         // ── 5. Overlap check ───────────────────────────────────────────
@@ -389,32 +417,78 @@ class LeaveController
                 throw new Exception("Request not found or already processed.");
             }
 
-            $stmt = $db->prepare("
-                SELECT * FROM leave_balances
-                WHERE employee_id = :emp
-                AND leave_period_id = :period
-                FOR UPDATE
-            ");
-            $stmt->execute([
-                'emp'    => $request['employee_id'],
-                'period' => $request['leave_period_id']
-            ]);
-            $balance = $stmt->fetch(PDO::FETCH_ASSOC);
+            // ── Detect leave type ──────────────────────────────────────
+            $ltStmt = $db->prepare("SELECT name FROM leave_types WHERE id = :id");
+            $ltStmt->execute(['id' => $request['leave_type_id']]);
+            $leaveTypeName = (string)$ltStmt->fetchColumn();
+            $isCompLeave   = (stripos($leaveTypeName, 'compensat') !== false);
 
-            if (!$balance || $balance['remaining_days'] < $request['total_days']) {
-                throw new Exception("Insufficient leave balance.");
+            if ($isCompLeave) {
+                // ── Comp leave: deduct from comp_claims FIFO by expires_at ──
+                $availStmt = $db->prepare("
+                    SELECT COALESCE(SUM(days_remaining), 0)
+                    FROM comp_claims
+                    WHERE employee_id = :emp
+                      AND status      = 'approved'
+                      AND expires_at  > CURDATE()
+                ");
+                $availStmt->execute(['emp' => $request['employee_id']]);
+                $available = (float)$availStmt->fetchColumn();
+
+                if ($available < $request['total_days']) {
+                    throw new Exception("Insufficient compensate leave balance. Available: {$available} day(s).");
+                }
+
+                $claimsStmt = $db->prepare("
+                    SELECT id, days_remaining
+                    FROM comp_claims
+                    WHERE employee_id = :emp
+                      AND status      = 'approved'
+                      AND expires_at  > CURDATE()
+                    ORDER BY expires_at ASC
+                    FOR UPDATE
+                ");
+                $claimsStmt->execute(['emp' => $request['employee_id']]);
+                $claimsRows = $claimsStmt->fetchAll(PDO::FETCH_ASSOC);
+
+                $toDeduct = (float)$request['total_days'];
+                foreach ($claimsRows as $cr) {
+                    if ($toDeduct <= 0) break;
+                    $deduct = min($toDeduct, (float)$cr['days_remaining']);
+                    $db->prepare("
+                        UPDATE comp_claims SET days_remaining = days_remaining - :d WHERE id = :id
+                    ")->execute(['d' => $deduct, 'id' => $cr['id']]);
+                    $toDeduct -= $deduct;
+                }
+            } else {
+                // ── Normal leave: deduct from leave_balances ───────────────
+                $stmt = $db->prepare("
+                    SELECT * FROM leave_balances
+                    WHERE employee_id = :emp
+                    AND leave_period_id = :period
+                    FOR UPDATE
+                ");
+                $stmt->execute([
+                    'emp'    => $request['employee_id'],
+                    'period' => $request['leave_period_id']
+                ]);
+                $balance = $stmt->fetch(PDO::FETCH_ASSOC);
+
+                if (!$balance || $balance['remaining_days'] < $request['total_days']) {
+                    throw new Exception("Insufficient leave balance.");
+                }
+
+                $stmt = $db->prepare("
+                    UPDATE leave_balances
+                    SET used_days = used_days + :days,
+                        remaining_days = remaining_days - :days
+                    WHERE id = :id
+                ");
+                $stmt->execute([
+                    'days' => $request['total_days'],
+                    'id'   => $balance['id']
+                ]);
             }
-
-            $stmt = $db->prepare("
-                UPDATE leave_balances
-                SET used_days = used_days + :days,
-                    remaining_days = remaining_days - :days
-                WHERE id = :id
-            ");
-            $stmt->execute([
-                'days' => $request['total_days'],
-                'id'   => $balance['id']
-            ]);
 
             $stmt = $db->prepare("
                 UPDATE leave_requests
@@ -2185,6 +2259,174 @@ class LeaveController
 
         header('Content-Type: application/json');
         echo json_encode($result);
+        exit;
+    }
+
+    /* ==========================================================
+       COMPENSATE LEAVE CLAIMS
+    ========================================================== */
+
+    public static function compClaim()
+    {
+        self::authorizeLogin();
+        require __DIR__ . '/../../resources/views/comp_claim.php';
+    }
+
+    public static function storeCompClaim()
+    {
+        self::authorizeLogin();
+        $db     = Database::connect();
+        $userId = (int)$_SESSION['user']['id'];
+
+        $workedDate = trim($_POST['worked_date'] ?? '');
+        $reason     = trim($_POST['reason']      ?? '');
+
+        if (!$workedDate || !$reason) {
+            $_SESSION['error'] = "All fields are required.";
+            header("Location: /leave-system/public/comp-claim");
+            exit;
+        }
+
+        // Cannot claim future dates
+        if ($workedDate > date('Y-m-d')) {
+            $_SESSION['error'] = "You cannot claim a future date.";
+            header("Location: /leave-system/public/comp-claim");
+            exit;
+        }
+
+        try {
+            $stmt = $db->prepare("
+                INSERT INTO comp_claims (employee_id, worked_date, reason, days_earned, status, created_at)
+                VALUES (:emp, :date, :reason, 1, 'pending', NOW())
+            ");
+            $stmt->execute([
+                'emp'    => $userId,
+                'date'   => $workedDate,
+                'reason' => $reason,
+            ]);
+
+            $_SESSION['success'] = "Claim submitted for " . date('d M Y', strtotime($workedDate)) . ". Pending admin approval.";
+        } catch (PDOException $e) {
+            // Unique constraint violation — duplicate date
+            if ($e->getCode() == 23000) {
+                $_SESSION['error'] = "You have already submitted a claim for " . date('d M Y', strtotime($workedDate)) . ".";
+            } else {
+                $_SESSION['error'] = "Submission failed. Please try again.";
+            }
+        }
+
+        header("Location: /leave-system/public/comp-claim");
+        exit;
+    }
+
+    public static function adminCompClaims()
+    {
+        self::authorizeAdmin();
+        $db = Database::connect();
+
+        $statusFilter = $_GET['status'] ?? 'pending';
+        $search       = trim($_GET['search'] ?? '');
+
+        $query = "
+            SELECT cc.*,
+                   u.name  AS employee_name,
+                   ab.name AS approved_by_name
+            FROM comp_claims cc
+            JOIN  users u  ON u.id  = cc.employee_id
+            LEFT JOIN users ab ON ab.id = cc.approved_by
+            WHERE 1=1
+        ";
+        $params = [];
+
+        if ($statusFilter !== '') {
+            $query .= " AND cc.status = :status";
+            $params['status'] = $statusFilter;
+        }
+
+        if ($search !== '') {
+            $query .= " AND u.name LIKE :search";
+            $params['search'] = "%$search%";
+        }
+
+        $query .= " ORDER BY cc.created_at DESC";
+
+        $stmt = $db->prepare($query);
+        $stmt->execute($params);
+        $claims = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        require __DIR__ . '/../../resources/views/admin_comp_claims.php';
+    }
+
+    public static function approveCompClaim(int $id)
+    {
+        self::authorizeAdmin();
+        $db = Database::connect();
+
+        try {
+            $db->beginTransaction();
+
+            $stmt = $db->prepare("
+                SELECT * FROM comp_claims WHERE id = :id AND status = 'pending'
+                FOR UPDATE
+            ");
+            $stmt->execute(['id' => $id]);
+            $claim = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if (!$claim) {
+                throw new Exception("Claim not found or already processed.");
+            }
+
+            $expiresAt = date('Y-m-d', strtotime('+6 months'));
+
+            $stmt = $db->prepare("
+                UPDATE comp_claims
+                SET status         = 'approved',
+                    approved_by    = :admin,
+                    approved_at    = NOW(),
+                    expires_at     = :expires,
+                    days_remaining = days_earned
+                WHERE id = :id
+            ");
+            $stmt->execute([
+                'admin'   => $_SESSION['user']['id'],
+                'expires' => $expiresAt,
+                'id'      => $id,
+            ]);
+
+            $db->commit();
+            $_SESSION['success'] = "Claim approved. Employee earns 1 compensate leave day (expires {$expiresAt}).";
+        } catch (Exception $e) {
+            $db->rollBack();
+            $_SESSION['error'] = $e->getMessage();
+        }
+
+        header("Location: /leave-system/public/admin/comp-claims");
+        exit;
+    }
+
+    public static function rejectCompClaim(int $id)
+    {
+        self::authorizeAdmin();
+        $db = Database::connect();
+
+        $reason = trim($_POST['rejection_reason'] ?? '');
+
+        $stmt = $db->prepare("
+            UPDATE comp_claims
+            SET status           = 'rejected',
+                approved_by      = :admin,
+                approved_at      = NOW(),
+                rejection_reason = :reason
+            WHERE id = :id AND status = 'pending'
+        ");
+        $stmt->execute([
+            'admin'  => $_SESSION['user']['id'],
+            'reason' => $reason ?: null,
+            'id'     => $id,
+        ]);
+
+        $_SESSION['success'] = "Claim rejected.";
+        header("Location: /leave-system/public/admin/comp-claims");
         exit;
     }
 }

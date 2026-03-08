@@ -227,6 +227,17 @@ class AuthController
             $stmt->execute(['uid' => $user['id']]);
             $balances = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
+            // Comp leave available balance
+            $compStmt = $db->prepare("
+                SELECT COALESCE(SUM(days_remaining), 0)
+                FROM comp_claims
+                WHERE employee_id = :uid
+                  AND status      = 'approved'
+                  AND expires_at  > CURDATE()
+            ");
+            $compStmt->execute(['uid' => $user['id']]);
+            $compBalance = (float)$compStmt->fetchColumn();
+
             $stmt = $db->prepare("SELECT status, COUNT(*) total FROM leave_requests WHERE employee_id = :uid GROUP BY status");
             $stmt->execute(['uid' => $user['id']]);
             $statsRaw = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -234,10 +245,11 @@ class AuthController
             foreach ($statsRaw as $row) $stats[$row['status']] = $row['total'];
 
             $stmt = $db->prepare("
-                SELECT lr.*, lt.name AS leave_type, lp.name AS period_name
+                SELECT lr.*, lt.name AS leave_type,
+                       COALESCE(lp.name, 'Compensate Leave') AS period_name
                 FROM leave_requests lr
                 JOIN leave_types   lt ON lr.leave_type_id   = lt.id
-                JOIN leave_periods lp ON lr.leave_period_id = lp.id
+                LEFT JOIN leave_periods lp ON lr.leave_period_id = lp.id
                 WHERE lr.employee_id = :uid
                 ORDER BY lr.created_at DESC LIMIT 5
             ");
@@ -278,6 +290,10 @@ class AuthController
 
         $totalEmployees = $db->query("
             SELECT COUNT(*) FROM users WHERE role = 'employee' AND is_active = 1
+        ")->fetchColumn();
+
+        $pendingCompClaims = (int)$db->query("
+            SELECT COUNT(*) FROM comp_claims WHERE status = 'pending'
         ")->fetchColumn();
 
         // ── Departments list for filter dropdown ─────────────────
