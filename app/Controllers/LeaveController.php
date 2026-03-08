@@ -32,20 +32,119 @@ class LeaveController
     public static function create()
     {
         self::authorizeLogin();
-        $db = Database::connect();
+        $db     = Database::connect();
+        $userId = (int)$_SESSION['user']['id'];
 
-        // Show all periods currently active (date-based, not flag-based)
-        // Includes overlapping periods — employee chooses which balance to use
-        $periods = $db->query("
-            SELECT * FROM leave_periods
-            WHERE start_date <= CURDATE() AND end_date >= CURDATE()
-            ORDER BY start_date ASC
-        ")->fetchAll(PDO::FETCH_ASSOC);
+        // Month from query string — default to current month
+        $month      = preg_match('/^\d{4}-\d{2}$/', $_GET['month'] ?? '') ? $_GET['month'] : date('Y-m');
+        $monthStart = $month . '-01';
+        $monthEnd   = date('Y-m-t', strtotime($monthStart));
 
-        $leaveTypes = $db->query("SELECT * FROM leave_types ORDER BY name ASC")
-            ->fetchAll(PDO::FETCH_ASSOC);
+        // Holidays for the month
+        $stmt = $db->prepare("
+            SELECT holiday_date AS date, name FROM holidays
+            WHERE holiday_date BETWEEN :s AND :e
+        ");
+        $stmt->execute(['s' => $monthStart, 'e' => $monthEnd]);
+        $holidays = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        // Employee's own pending + approved leaves overlapping this month
+        $stmt = $db->prepare("
+            SELECT lr.start_date, lr.end_date, lr.status, lt.name AS leave_type
+            FROM leave_requests lr
+            JOIN leave_types lt ON lr.leave_type_id = lt.id
+            WHERE lr.employee_id = :id
+            AND   lr.status IN ('pending', 'approved')
+            AND   lr.start_date <= :e
+            AND   lr.end_date   >= :s
+        ");
+        $stmt->execute(['id' => $userId, 's' => $monthStart, 'e' => $monthEnd]);
+        $myLeaves = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        // Employee's work schedule (weekday numbers, ISO: 1=Mon..7=Sun)
+        $stmt = $db->prepare("
+            SELECT wsd.weekday
+            FROM work_schedule_days wsd
+            JOIN users u ON u.work_schedule_id = wsd.schedule_id
+            WHERE u.id = :id
+        ");
+        $stmt->execute(['id' => $userId]);
+        $workDays = array_map('intval', $stmt->fetchAll(PDO::FETCH_COLUMN));
+        if (empty($workDays)) $workDays = [1, 2, 3, 4, 5]; // fallback Mon–Fri
+
+        // Leave types with balance for current active period
+        $stmt = $db->prepare("
+            SELECT
+                lt.id,
+                lt.name,
+                COALESCE(lb.remaining_days, 0) AS remaining_days,
+                COALESCE(lb.total_days,     0) AS total_days,
+                COALESCE(lb.used_days,      0) AS used_days
+            FROM leave_types lt
+            LEFT JOIN leave_balances lb
+                ON  lb.leave_type_id  = lt.id
+                AND lb.employee_id    = :id
+                AND lb.leave_period_id IN (
+                    SELECT id FROM leave_periods
+                    WHERE start_date <= CURDATE() AND end_date >= CURDATE()
+                    LIMIT 1
+                )
+            ORDER BY lt.name ASC
+        ");
+        $stmt->execute(['id' => $userId]);
+        $leaveTypes = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         require __DIR__ . '/../../resources/views/leave_create.php';
+    }
+
+    public static function myData()
+    {
+        self::authorizeLogin();
+        $db     = Database::connect();
+        $userId = (int)$_SESSION['user']['id'];
+
+        // Full profile
+        $stmt = $db->prepare("
+            SELECT u.*,
+                   d.name AS dept_name,
+                   j.name AS job_title_name
+            FROM users u
+            LEFT JOIN departments d ON u.department_id = d.id
+            LEFT JOIN job_titles  j ON u.job_title_id  = j.id
+            WHERE u.id = :id
+        ");
+        $stmt->execute(['id' => $userId]);
+        $profile = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        // Full leave history with period name
+        $stmt = $db->prepare("
+            SELECT lr.*, lt.name AS leave_type, lp.name AS period_name
+            FROM leave_requests lr
+            JOIN leave_types   lt ON lr.leave_type_id   = lt.id
+            JOIN leave_periods lp ON lr.leave_period_id = lp.id
+            WHERE lr.employee_id = :id
+            ORDER BY lr.created_at DESC
+        ");
+        $stmt->execute(['id' => $userId]);
+        $history = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        // Current balances (all active periods)
+        $stmt = $db->prepare("
+            SELECT lt.name AS leave_type, lp.name AS period_name,
+                   lb.total_days, lb.used_days,
+                   (lb.total_days - lb.used_days) AS remaining_days
+            FROM leave_balances lb
+            JOIN leave_types   lt ON lb.leave_type_id   = lt.id
+            JOIN leave_periods lp ON lb.leave_period_id = lp.id
+            WHERE lb.employee_id = :id
+            AND   lp.start_date <= CURDATE()
+            AND   lp.end_date   >= CURDATE()
+            ORDER BY lt.name ASC
+        ");
+        $stmt->execute(['id' => $userId]);
+        $balanceSummary = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        require __DIR__ . '/../../resources/views/my_data.php';
     }
 
     public static function store()
@@ -237,7 +336,7 @@ class LeaveController
             'emp' => $_SESSION['user']['id']
         ]);
 
-        header("Location: /leave-system/public/my-history");
+        header("Location: /leave-system/public/my-data");
         exit;
     }
 

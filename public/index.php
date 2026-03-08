@@ -87,8 +87,14 @@ if ($uri === '/leave-system/public/leave-store' && $_SERVER['REQUEST_METHOD'] ==
     exit;
 }
 
+if ($uri === '/leave-system/public/my-data') {
+    LeaveController::myData();
+    exit;
+}
+
 if ($uri === '/leave-system/public/my-history') {
-    LeaveController::myHistory();
+    // Redirect old URL to new
+    header("Location: /leave-system/public/my-data");
     exit;
 }
 

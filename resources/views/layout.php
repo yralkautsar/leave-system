@@ -152,15 +152,17 @@ function isActive(string $path, string $match, bool $exact = false): string
                     <div class="nav-section">My Leave</div>
 
                     <a href="/leave-system/public/leave"
-                        class="nav-link <?= isActive($currentPath, '/leave-system/public/leave', true) ?>">
+                        class="nav-link <?= isActive($currentPath, '/leave-system/public/leave', true) ?>"
+                        data-tooltip="Submit Leave">
                         <?= icon('submit') ?>
                         <span>Submit Leave</span>
                     </a>
 
-                    <a href="/leave-system/public/my-history"
-                        class="nav-link <?= isActive($currentPath, '/my-history') ?>">
-                        <?= icon('history') ?>
-                        <span>My History</span>
+                    <a href="/leave-system/public/my-data"
+                        class="nav-link <?= isActive($currentPath, '/my-data') ?>"
+                        data-tooltip="My Data">
+                        <?= icon('user') ?>
+                        <span>My Data</span>
                     </a>
 
                 <?php endif; ?>
@@ -222,7 +224,7 @@ function isActive(string $path, string $match, bool $exact = false): string
                 '/leave-system/public/admin/settings'    => 'Settings',
                 '/leave-system/public/calendar'          => 'Calendar',
                 '/leave-system/public/leave'             => 'Submit Leave',
-                '/leave-system/public/my-history'        => 'My Leave History',
+                '/leave-system/public/my-data'           => 'My Data',
             ];
             $pageTitle = $pageTitles[$currentPath] ?? 'Leave Management';
             ?>
