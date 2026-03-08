@@ -244,6 +244,22 @@ class AuthController
             $stmt->execute(['uid' => $user['id']]);
             $history = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
+            // Notifications: approved/rejected in last 7 days
+            $stmt = $db->prepare("
+                SELECT lr.id, lr.status, lr.start_date, lr.end_date,
+                       lr.total_days, lr.rejection_reason,
+                       lt.name AS leave_type,
+                       lr.approved_at
+                FROM leave_requests lr
+                JOIN leave_types lt ON lr.leave_type_id = lt.id
+                WHERE lr.employee_id = :uid
+                AND lr.status IN ('approved','rejected')
+                AND lr.approved_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+                ORDER BY lr.approved_at DESC
+            ");
+            $stmt->execute(['uid' => $user['id']]);
+            $notifications = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
             require __DIR__ . '/../../resources/views/dashboard_employee.php';
             return;
         }

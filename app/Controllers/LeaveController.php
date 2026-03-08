@@ -143,6 +143,10 @@ class LeaveController
         $stmt->execute(['id' => $userId]);
         $balanceSummary = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
+        // Periods list for filter dropdown
+        $periods = $db->query("SELECT id, name FROM leave_periods ORDER BY start_date DESC")
+            ->fetchAll(PDO::FETCH_ASSOC);
+
         require __DIR__ . '/../../resources/views/my_data.php';
     }
 

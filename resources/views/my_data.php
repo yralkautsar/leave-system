@@ -504,7 +504,7 @@ $activeTab = $_GET['tab'] ?? 'profile';
             <span class="md-hist-count"><?= count($history) ?> total</span>
         </div>
 
-        <!-- Status filter -->
+        <!-- Filters -->
         <div class="md-filter">
             <label style="font-size:12px;color:#94a3b8;font-weight:600;">Filter:</label>
             <select id="histStatusFilter" onchange="filterHistory()">
@@ -513,6 +513,14 @@ $activeTab = $_GET['tab'] ?? 'profile';
                 <option value="approved">Approved</option>
                 <option value="rejected">Rejected</option>
                 <option value="cancelled">Cancelled</option>
+            </select>
+            <select id="histPeriodFilter" onchange="filterHistory()">
+                <option value="">All Periods</option>
+                <?php foreach (($periods ?? []) as $p): ?>
+                    <option value="<?= htmlspecialchars($p['name']) ?>">
+                        <?= htmlspecialchars($p['name']) ?>
+                    </option>
+                <?php endforeach; ?>
             </select>
         </div>
 
@@ -531,7 +539,7 @@ $activeTab = $_GET['tab'] ?? 'profile';
                 </thead>
                 <tbody>
                     <?php foreach ($history as $h): ?>
-                        <tr data-status="<?= $h['status'] ?>">
+                        <tr data-status="<?= $h['status'] ?>" data-period="<?= htmlspecialchars($h['period_name'] ?? '') ?>">
                             <td><?= htmlspecialchars($h['leave_type']) ?></td>
                             <td><?= date('d M Y', strtotime($h['start_date'])) ?></td>
                             <td><?= date('d M Y', strtotime($h['end_date'])) ?></td>
@@ -585,11 +593,20 @@ $activeTab = $_GET['tab'] ?? 'profile';
     }
 
     function filterHistory() {
-        const val = document.getElementById('histStatusFilter').value;
+        const status = document.getElementById('histStatusFilter').value;
+        const period = document.getElementById('histPeriodFilter').value;
         const rows = document.querySelectorAll('#histTable tbody tr');
+        let visible = 0;
         rows.forEach(row => {
-            row.style.display = (!val || row.dataset.status === val) ? '' : 'none';
+            const matchStatus = !status || row.dataset.status === status;
+            const matchPeriod = !period || row.dataset.period === period;
+            const show = matchStatus && matchPeriod;
+            row.style.display = show ? '' : 'none';
+            if (show) visible++;
         });
+        // Update count
+        const countEl = document.querySelector('.md-hist-count');
+        if (countEl) countEl.textContent = visible + ' total';
     }
 </script>
 

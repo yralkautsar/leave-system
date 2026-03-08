@@ -305,19 +305,141 @@
         color: #94a3b8;
         font-size: 13.5px;
     }
+
+    /* Notification banners */
+    .ed-notif-wrap {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        margin-bottom: 20px;
+    }
+
+    .ed-notif {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        padding: 14px 16px;
+        border-radius: 12px;
+        border: 1.5px solid;
+        position: relative;
+        animation: notifIn .25s ease;
+    }
+
+    @keyframes notifIn {
+        from {
+            opacity: 0;
+            transform: translateY(-6px)
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0)
+        }
+    }
+
+    .ed-notif.approved {
+        background: #f0fdf4;
+        border-color: #86efac;
+    }
+
+    .ed-notif.rejected {
+        background: #fef2f2;
+        border-color: #fca5a5;
+    }
+
+    .ed-notif-icon {
+        font-size: 18px;
+        flex-shrink: 0;
+        margin-top: 1px;
+    }
+
+    .ed-notif-body {
+        flex: 1;
+    }
+
+    .ed-notif-title {
+        font-size: 13.5px;
+        font-weight: 700;
+        color: #0f172a;
+        margin: 0 0 2px;
+    }
+
+    .ed-notif-sub {
+        font-size: 12.5px;
+        color: #64748b;
+        margin: 0;
+    }
+
+    .ed-notif-close {
+        position: absolute;
+        top: 10px;
+        right: 12px;
+        background: none;
+        border: none;
+        cursor: pointer;
+        font-size: 16px;
+        color: #94a3b8;
+        line-height: 1;
+        padding: 0;
+        transition: color .12s;
+    }
+
+    .ed-notif-close:hover {
+        color: #374151;
+    }
+
+    /* Period badge on balance card */
+    .ed-bal-period {
+        font-size: 11px;
+        color: #94a3b8;
+        margin-bottom: 6px;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .ed-bal-period span {
+        background: #f1f5f9;
+        color: #64748b;
+        padding: 2px 7px;
+        border-radius: 99px;
+        font-size: 10.5px;
+        font-weight: 600;
+    }
+
+    /* Cancel button in recent table */
+    .ed-cancel-btn {
+        padding: 4px 10px;
+        font-size: 11.5px;
+        border: 1.5px solid #fca5a5;
+        border-radius: 6px;
+        color: #b91c1c;
+        background: white;
+        cursor: pointer;
+        transition: all .12s ease;
+        white-space: nowrap;
+    }
+
+    .ed-cancel-btn:hover {
+        background: #fef2f2;
+        border-color: #f87171;
+    }
 </style>
 
 <?php
-$balances = $balances ?? [];
-$stats    = $stats    ?? ['pending' => 0, 'approved' => 0, 'rejected' => 0];
-$history  = $history  ?? [];
-$userName = explode(' ', $_SESSION['user']['name'])[0]; // first name
+$balances      = $balances      ?? [];
+$stats         = $stats         ?? ['pending' => 0, 'approved' => 0, 'rejected' => 0];
+$history       = $history       ?? [];
+$notifications = $notifications ?? [];
+$userName = explode(' ', $_SESSION['user']['name'])[0];
+
+// Filter out dismissed notifications (via sessionStorage — handled in JS)
 ?>
 
 <!-- HERO -->
 <div class="ed-hero">
     <div class="ed-hero-text">
-        <h2>Hello, <?= htmlspecialchars($userName) ?> 👋</h2>
+        <h2>Hello, <?= htmlspecialchars($userName) ?></h2>
         <p>Here's your leave overview for today.</p>
     </div>
     <a href="/leave-system/public/leave" class="ed-hero-btn">
@@ -329,6 +451,37 @@ $userName = explode(' ', $_SESSION['user']['name'])[0]; // first name
     </a>
 </div>
 
+<!-- NOTIFICATION BANNERS -->
+<?php if (!empty($notifications)): ?>
+    <div class="ed-notif-wrap" id="notifWrap">
+        <?php foreach ($notifications as $n):
+            $isApproved = $n['status'] === 'approved';
+            $icon       = $isApproved ? '✅' : '❌';
+            $date       = date('d M Y', strtotime($n['start_date']));
+            $endDate    = date('d M Y', strtotime($n['end_date']));
+            $label      = $isApproved ? 'approved' : 'rejected';
+            $notifId    = 'notif-' . $n['id'];
+        ?>
+            <div class="ed-notif <?= $label ?>" id="<?= $notifId ?>" data-id="<?= $n['id'] ?>">
+                <div class="ed-notif-icon"><?= $icon ?></div>
+                <div class="ed-notif-body">
+                    <p class="ed-notif-title">
+                        Leave request <?= $isApproved ? 'approved' : 'rejected' ?> —
+                        <?= htmlspecialchars($n['leave_type']) ?>
+                    </p>
+                    <p class="ed-notif-sub">
+                        <?= $date ?> – <?= $endDate ?> &middot; <?= (float)$n['total_days'] ?> day(s)
+                        <?php if (!$isApproved && !empty($n['rejection_reason'])): ?>
+                            &middot; Reason: "<?= htmlspecialchars($n['rejection_reason']) ?>"
+                        <?php endif; ?>
+                    </p>
+                </div>
+                <button class="ed-notif-close" onclick="dismissNotif('<?= $notifId ?>')" title="Dismiss">×</button>
+            </div>
+        <?php endforeach; ?>
+    </div>
+<?php endif; ?>
+
 <!-- LEAVE BALANCES -->
 <p class="ed-section-title">Leave Balance — Current Period</p>
 <div class="ed-balances">
@@ -338,6 +491,16 @@ $userName = explode(' ', $_SESSION['user']['name'])[0]; // first name
             $low   = $pct <= 25 ? 'low' : '';
         ?>
             <div class="ed-bal-card">
+                <div class="ed-bal-period">
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <rect x="3" y="4" width="18" height="18" rx="2" />
+                        <line x1="16" y1="2" x2="16" y2="6" />
+                        <line x1="8" y1="2" x2="8" y2="6" />
+                        <line x1="3" y1="10" x2="21" y2="10" />
+                    </svg>
+                    <span><?= htmlspecialchars($b['period_name']) ?></span>
+                    · expires <?= date('d M Y', strtotime($b['end_date'])) ?>
+                </div>
                 <div class="ed-bal-type"><?= htmlspecialchars($b['leave_type']) ?></div>
                 <div class="ed-bal-remaining">
                     <?= (float)$b['remaining_days'] ?><span>days left</span>
@@ -408,6 +571,7 @@ $userName = explode(' ', $_SESSION['user']['name'])[0]; // first name
                     <th>End</th>
                     <th>Days</th>
                     <th>Status</th>
+                    <th></th>
                 </tr>
             </thead>
             <tbody>
@@ -418,6 +582,15 @@ $userName = explode(' ', $_SESSION['user']['name'])[0]; // first name
                         <td><?= $h['end_date'] ?></td>
                         <td><?= (float)$h['total_days'] ?></td>
                         <td><span class="bd bd-<?= $h['status'] ?>"><?= ucfirst($h['status']) ?></span></td>
+                        <td>
+                            <?php if ($h['status'] === 'pending'): ?>
+                                <form method="POST" action="/leave-system/public/cancel"
+                                    onsubmit="return confirm('Cancel this leave request?')">
+                                    <input type="hidden" name="id" value="<?= $h['id'] ?>">
+                                    <button type="submit" class="ed-cancel-btn">Cancel</button>
+                                </form>
+                            <?php endif; ?>
+                        </td>
                     </tr>
                 <?php endforeach; ?>
             </tbody>
@@ -426,6 +599,34 @@ $userName = explode(' ', $_SESSION['user']['name'])[0]; // first name
         <div class="ed-empty">No leave requests yet. <a href="/leave-system/public/leave" style="color:#f97316;">Submit your first one →</a></div>
     <?php endif; ?>
 </div>
+
+<script>
+    // Dismiss notifications — stored in sessionStorage per notif ID
+    function dismissNotif(id) {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.style.transition = 'opacity .2s ease, transform .2s ease';
+        el.style.opacity = '0';
+        el.style.transform = 'translateY(-4px)';
+        setTimeout(() => {
+            el.remove();
+            // Hide wrapper if empty
+            const wrap = document.getElementById('notifWrap');
+            if (wrap && !wrap.querySelector('.ed-notif')) wrap.remove();
+        }, 200);
+        sessionStorage.setItem('dismissed_' + id, '1');
+    }
+
+    // On load — hide already-dismissed notifications
+    document.addEventListener('DOMContentLoaded', () => {
+        document.querySelectorAll('.ed-notif[data-id]').forEach(el => {
+            const key = 'dismissed_notif-' + el.dataset.id;
+            if (sessionStorage.getItem(key)) el.remove();
+        });
+        const wrap = document.getElementById('notifWrap');
+        if (wrap && !wrap.querySelector('.ed-notif')) wrap.remove();
+    });
+</script>
 
 <?php
 $content = ob_get_clean();
