@@ -272,101 +272,7 @@ $roleLabel   = ['employee' => 'Employee', 'admin_approver' => 'Admin'];
     }
 
     /* ── Modal ── */
-    .u-modal-backdrop {
-        position: fixed;
-        inset: 0;
-        background: rgba(0, 0, 0, 0.35);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        z-index: 9999;
-        animation: uFadeIn .15s ease;
-    }
-
-    @keyframes uFadeIn {
-        from {
-            opacity: 0
-        }
-
-        to {
-            opacity: 1
-        }
-    }
-
-    .u-modal {
-        background: #fff;
-        border-radius: 16px;
-        width: 640px;
-        max-width: 95vw;
-        max-height: 92vh;
-        display: flex;
-        flex-direction: column;
-        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.18);
-        animation: uSlideUp .18s ease;
-        overflow: hidden;
-    }
-
-    @keyframes uSlideUp {
-        from {
-            opacity: 0;
-            transform: translateY(12px)
-        }
-
-        to {
-            opacity: 1;
-            transform: translateY(0)
-        }
-    }
-
-    .u-modal-hd {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 22px 28px 18px;
-        border-bottom: 1px solid #e5e7eb;
-        flex-shrink: 0;
-    }
-
-    .u-modal-hd h3 {
-        margin: 0;
-        font-size: 16px;
-        font-weight: 700;
-        color: #0f172a;
-    }
-
-    .u-modal-x {
-        width: 28px;
-        height: 28px;
-        border-radius: 8px;
-        border: none;
-        background: none;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: #94a3b8;
-        transition: .15s ease;
-    }
-
-    .u-modal-x:hover {
-        background: #f1f5f9;
-        color: #374151;
-    }
-
-    .u-modal-body {
-        padding: 20px 28px;
-        overflow-y: auto;
-        flex: 1;
-    }
-
-    .u-modal-ft {
-        padding: 16px 28px;
-        border-top: 1px solid #e5e7eb;
-        display: flex;
-        justify-content: flex-end;
-        gap: 10px;
-        flex-shrink: 0;
-    }
+    /* u-modal shell CSS removed — uses global openGM() + .gm-* */
 
     /* ── Form inside modal ── */
     .u-section {
@@ -442,37 +348,7 @@ $roleLabel   = ['employee' => 'Employee', 'admin_approver' => 'Admin'];
     }
 
     /* ── Modal buttons ── */
-    .u-btn-cancel {
-        padding: 9px 20px;
-        border-radius: 8px;
-        font-size: 13.5px;
-        font-weight: 500;
-        border: 1px solid #e5e7eb;
-        background: #fff;
-        color: #374151;
-        cursor: pointer;
-        transition: .15s ease;
-    }
-
-    .u-btn-cancel:hover {
-        background: #f8fafc;
-    }
-
-    .u-btn-save {
-        padding: 9px 22px;
-        border-radius: 8px;
-        font-size: 13.5px;
-        font-weight: 600;
-        border: none;
-        background: #f97316;
-        color: #fff;
-        cursor: pointer;
-        transition: .15s ease;
-    }
-
-    .u-btn-save:hover {
-        background: #ea580c;
-    }
+    /* u-btn-cancel/save removed — uses gm-btn-cancel/save inside openGM() */
 
     @media (max-width:560px) {
         .u-grid {
@@ -666,7 +542,6 @@ $roleLabel   = ['employee' => 'Employee', 'admin_approver' => 'Admin'];
 </div>
 
 <!-- MODAL ROOT -->
-<div id="userModalRoot"></div>
 
 <script>
     const DEPTS = <?= json_encode(array_values($departments)) ?>;
@@ -688,12 +563,7 @@ $roleLabel   = ['employee' => 'Employee', 'admin_approver' => 'Admin'];
         });
         return h;
     }
-
-    function escH(s) {
-        return String(s ?? '')
-            .replace(/&/g, '&amp;').replace(/"/g, '&quot;')
-            .replace(/</g, '&lt;').replace(/>/g, '&gt;');
-    }
+    /* escH() defined globally in layout.php */
 
     function openUserModal(user) {
         const isEdit = !!user;
@@ -704,27 +574,18 @@ $roleLabel   = ['employee' => 'Employee', 'admin_approver' => 'Admin'];
 
         const v = k => u[k] ?? '';
 
-        document.getElementById('userModalRoot').innerHTML = `
-    <div class="u-modal-backdrop" onclick="if(event.target===this)closeUserModal()">
-    <div class="u-modal">
-
-        <div class="u-modal-hd">
-            <h3>${isEdit ? 'Edit User' : 'Add User'}</h3>
-            <button class="u-modal-x" onclick="closeUserModal()" type="button">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-                </svg>
-            </button>
-        </div>
-
+        openGM({
+            title: isEdit ? 'Edit User' : 'Add User',
+            size: 'lg',
+            html: `
         <form method="POST" action="${action}" style="display:contents;">
-        <div class="u-modal-body">
+        <div class="gm-body" style="padding:20px 28px;">
 
             <div class="u-section">Account</div>
             <div class="u-grid">
                 <div class="u-fg">
                     <label>Full Name <span class="u-req">*</span></label>
-                    <input type="text" name="name" value="${escH(v('name'))}" required autofocus>
+                    <input type="text" name="name" value="${escH(v('name'))}" required>
                 </div>
                 <div class="u-fg">
                     <label>Email <span class="u-req">*</span></label>
@@ -777,21 +638,19 @@ $roleLabel   = ['employee' => 'Employee', 'admin_approver' => 'Admin'];
                 </div>
             </div>
 
-        </div><!-- body -->
-
-        <div class="u-modal-ft">
-            <button type="button" class="u-btn-cancel" onclick="closeUserModal()">Cancel</button>
-            <button type="submit" class="u-btn-save">${isEdit ? 'Save Changes' : 'Add User'}</button>
         </div>
 
-        </form>
-    </div>
-    </div>`;
+        <div class="gm-ft">
+            <button type="button" class="gm-btn-cancel" onclick="closeGM()">Cancel</button>
+            <button type="submit" class="gm-btn-save">${isEdit ? 'Save Changes' : 'Add User'}</button>
+        </div>
+        </form>`,
+            onOpen: () => {
+                document.querySelector('.gm-body input[name="name"]')?.focus();
+            }
+        });
     }
-
-    function closeUserModal() {
-        document.getElementById('userModalRoot').innerHTML = '';
-    }
+    /* closeUserModal removed — use closeGM() from layout.php */
 </script>
 
 <?php

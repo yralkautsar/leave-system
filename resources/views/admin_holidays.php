@@ -214,161 +214,7 @@ foreach ($holidays as $h) {
     }
 
     /* Modal */
-    .hol-modal-backdrop {
-        position: fixed;
-        inset: 0;
-        background: rgba(0, 0, 0, 0.35);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        z-index: 9999;
-        animation: hFadeIn .15s ease;
-    }
-
-    @keyframes hFadeIn {
-        from {
-            opacity: 0
-        }
-
-        to {
-            opacity: 1
-        }
-    }
-
-    .hol-modal {
-        background: #fff;
-        border-radius: 16px;
-        width: 460px;
-        max-width: 95vw;
-        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.18);
-        animation: hSlide .18s ease;
-        overflow: hidden;
-    }
-
-    @keyframes hSlide {
-        from {
-            opacity: 0;
-            transform: translateY(10px)
-        }
-
-        to {
-            opacity: 1;
-            transform: translateY(0)
-        }
-    }
-
-    .hol-modal-hd {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 20px 24px 16px;
-        border-bottom: 1px solid #e5e7eb;
-    }
-
-    .hol-modal-hd h3 {
-        margin: 0;
-        font-size: 15px;
-        font-weight: 700;
-        color: #0f172a;
-    }
-
-    .hol-modal-x {
-        width: 26px;
-        height: 26px;
-        border-radius: 7px;
-        border: none;
-        background: none;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: #94a3b8;
-        transition: .15s;
-    }
-
-    .hol-modal-x:hover {
-        background: #f1f5f9;
-        color: #374151;
-    }
-
-    .hol-modal-body {
-        padding: 20px 24px;
-    }
-
-    .hol-modal-ft {
-        padding: 14px 24px;
-        border-top: 1px solid #e5e7eb;
-        display: flex;
-        justify-content: flex-end;
-        gap: 10px;
-    }
-
-    .hol-fg {
-        display: flex;
-        flex-direction: column;
-        gap: 5px;
-        margin-bottom: 14px;
-    }
-
-    .hol-fg label {
-        font-size: 12px;
-        font-weight: 600;
-        color: #64748b;
-        text-transform: uppercase;
-        letter-spacing: .04em;
-    }
-
-    .hol-fg input,
-    .hol-fg select {
-        padding: 9px 12px;
-        border: 1.5px solid #e5e7eb;
-        border-radius: 8px;
-        font-size: 13.5px;
-        color: #0f172a;
-        background: #fff;
-        outline: none;
-        width: 100%;
-        box-sizing: border-box;
-        transition: .15s;
-    }
-
-    .hol-fg input:focus,
-    .hol-fg select:focus {
-        border-color: #f97316;
-        box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.15);
-    }
-
-    .hol-btn-cancel {
-        padding: 8px 18px;
-        border-radius: 8px;
-        font-size: 13px;
-        font-weight: 500;
-        border: 1px solid #e5e7eb;
-        background: #fff;
-        color: #374151;
-        cursor: pointer;
-        transition: .15s;
-    }
-
-    .hol-btn-cancel:hover {
-        background: #f8fafc;
-    }
-
-    .hol-btn-save {
-        padding: 8px 20px;
-        border-radius: 8px;
-        font-size: 13px;
-        font-weight: 600;
-        border: none;
-        background: #f97316;
-        color: #fff;
-        cursor: pointer;
-        transition: .15s;
-    }
-
-    .hol-btn-save:hover {
-        background: #ea580c;
-    }
+    /* hol-modal shell CSS removed — uses global openGM() + .gm-* */
 </style>
 
 <!-- HEADER -->
@@ -484,8 +330,6 @@ foreach ($holidays as $h) {
 </div>
 
 <!-- MODAL ROOT -->
-<div id="holModalRoot"></div>
-
 <script>
     function openHolModal(h) {
         const isEdit = !!h;
@@ -496,28 +340,22 @@ foreach ($holidays as $h) {
         const v = k => h ? (h[k] ?? '') : '';
         const sel = (val, opt) => val === opt ? 'selected' : '';
 
-        document.getElementById('holModalRoot').innerHTML = `
-    <div class="hol-modal-backdrop" onclick="if(event.target===this)closeHolModal()">
-    <div class="hol-modal">
-        <div class="hol-modal-hd">
-            <h3>${isEdit ? 'Edit Holiday' : 'Add Holiday'}</h3>
-            <button type="button" class="hol-modal-x" onclick="closeHolModal()">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-                </svg>
-            </button>
-        </div>
-        <form method="POST" action="${action}">
-        <div class="hol-modal-body">
-            <div class="hol-fg">
+        openGM({
+            title: isEdit ? 'Edit Holiday' : 'Add Holiday',
+            size: 'sm',
+            html: `
+        <form method="POST" action="${action}" style="display:contents;">
+        <div class="gm-body">
+            <div class="gm-fg">
                 <label>Date <span style="color:#dc2626;">*</span></label>
-                <input type="date" name="holiday_date" value="${v('holiday_date')}" required autofocus>
+                <input type="date" name="holiday_date" value="${v('holiday_date')}" required>
             </div>
-            <div class="hol-fg">
+            <div class="gm-fg">
                 <label>Holiday Name <span style="color:#dc2626;">*</span></label>
-                <input type="text" name="name" value="${escH(v('name'))}" required placeholder="e.g. Hari Kemerdekaan">
+                <input type="text" name="name" value="${escH(v('name'))}" required
+                    placeholder="e.g. Hari Kemerdekaan">
             </div>
-            <div class="hol-fg">
+            <div class="gm-fg">
                 <label>Type</label>
                 <select name="type">
                     <option value="national" ${sel(v('type'), 'national')}>National</option>
@@ -525,23 +363,15 @@ foreach ($holidays as $h) {
                 </select>
             </div>
         </div>
-        <div class="hol-modal-ft">
-            <button type="button" class="hol-btn-cancel" onclick="closeHolModal()">Cancel</button>
-            <button type="submit" class="hol-btn-save">${isEdit ? 'Save Changes' : 'Add Holiday'}</button>
+        <div class="gm-ft">
+            <button type="button" class="gm-btn-cancel" onclick="closeGM()">Cancel</button>
+            <button type="submit" class="gm-btn-save">${isEdit ? 'Save Changes' : 'Add Holiday'}</button>
         </div>
-        </form>
-    </div>
-    </div>`;
-    }
-
-    function closeHolModal() {
-        document.getElementById('holModalRoot').innerHTML = '';
-    }
-
-    function escH(s) {
-        return String(s ?? '')
-            .replace(/&/g, '&amp;').replace(/"/g, '&quot;')
-            .replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        </form>`,
+            onOpen: () => {
+                document.querySelector('.gm-body input[name="holiday_date"]')?.focus();
+            }
+        });
     }
 </script>
 

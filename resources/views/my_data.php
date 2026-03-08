@@ -310,22 +310,7 @@
     }
 
     /* Cancel btn */
-    .md-cancel-btn {
-        padding: 5px 12px;
-        border-radius: 6px;
-        border: 1px solid #fecaca;
-        background: white;
-        color: #dc2626;
-        font-size: 12px;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all .15s ease;
-    }
-
-    .md-cancel-btn:hover {
-        background: #fef2f2;
-        border-color: #dc2626;
-    }
+    /* md-cancel-btn removed — uses global .btn-outline-danger */
 
     .md-empty {
         padding: 48px 24px;
@@ -574,7 +559,7 @@ $activeTab = $_GET['tab'] ?? 'profile';
                                     <form method="POST" action="/leave-system/public/cancel"
                                         onsubmit="return confirm('Cancel this leave request?')">
                                         <input type="hidden" name="id" value="<?= $h['id'] ?>">
-                                        <button type="submit" class="md-cancel-btn">Cancel</button>
+                                        <button type="submit" class="btn-outline-danger" style="padding:5px 12px;font-size:12px;">Cancel</button>
                                     </form>
                                 <?php endif; ?>
                             </td>

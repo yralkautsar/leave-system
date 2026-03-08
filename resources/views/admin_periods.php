@@ -209,95 +209,7 @@
     }
 
     /* ── Add modal ──────────────────────────────────────── */
-    .per-modal-bd {
-        position: fixed;
-        inset: 0;
-        background: rgba(0, 0, 0, 0.35);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        z-index: 9999;
-        animation: perFade .15s ease;
-    }
-
-    @keyframes perFade {
-        from {
-            opacity: 0
-        }
-
-        to {
-            opacity: 1
-        }
-    }
-
-    .per-modal {
-        background: #fff;
-        border-radius: 16px;
-        width: 480px;
-        max-width: 95vw;
-        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.18);
-        animation: perSlide .18s ease;
-        overflow: hidden;
-    }
-
-    @keyframes perSlide {
-        from {
-            opacity: 0;
-            transform: translateY(10px)
-        }
-
-        to {
-            opacity: 1;
-            transform: translateY(0)
-        }
-    }
-
-    .per-modal-hd {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 20px 24px 16px;
-        border-bottom: 1px solid #e5e7eb;
-    }
-
-    .per-modal-hd h3 {
-        margin: 0;
-        font-size: 15px;
-        font-weight: 700;
-        color: #0f172a;
-    }
-
-    .per-modal-x {
-        width: 26px;
-        height: 26px;
-        border-radius: 7px;
-        border: none;
-        background: none;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: #94a3b8;
-        transition: .15s;
-    }
-
-    .per-modal-x:hover {
-        background: #f1f5f9;
-        color: #374151;
-    }
-
-    .per-modal-body {
-        padding: 20px 24px;
-    }
-
-    .per-modal-ft {
-        padding: 14px 24px;
-        border-top: 1px solid #e5e7eb;
-        display: flex;
-        justify-content: flex-end;
-        gap: 10px;
-    }
-
+    /* per-modal-* shell CSS removed — uses global openGM() + .gm-* from admin.css */
     .per-grid {
         display: grid;
         grid-template-columns: 1fr 1fr;
@@ -365,37 +277,7 @@
         margin-bottom: 2px;
     }
 
-    .per-btn-cancel {
-        padding: 8px 18px;
-        border-radius: 8px;
-        font-size: 13px;
-        font-weight: 500;
-        border: 1px solid #e5e7eb;
-        background: #fff;
-        color: #374151;
-        cursor: pointer;
-        transition: .15s;
-    }
-
-    .per-btn-cancel:hover {
-        background: #f8fafc;
-    }
-
-    .per-btn-save {
-        padding: 8px 20px;
-        border-radius: 8px;
-        font-size: 13px;
-        font-weight: 600;
-        border: none;
-        background: #f97316;
-        color: #fff;
-        cursor: pointer;
-        transition: .15s;
-    }
-
-    .per-btn-save:hover {
-        background: #ea580c;
-    }
+    /* per-btn-cancel/save removed — uses gm-btn-cancel/save inside openGM() */
 
     /* ── Alert ──────────────────────────────────────────── */
     .per-alert {
@@ -621,21 +503,13 @@
 </div>
 
 <!-- ── Add period modal ──────────────────────────────── -->
-<div id="perModalRoot"></div>
-
 <script>
     function openPerModal() {
-        document.getElementById('perModalRoot').innerHTML = `
-    <div class="per-modal-bd" onclick="if(event.target===this)closePerModal()">
-    <div class="per-modal">
-        <div class="per-modal-hd">
-            <h3>New Leave Period</h3>
-            <button type="button" class="per-modal-x" onclick="closePerModal()">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-            </button>
-        </div>
-        <form method="POST" action="/leave-system/public/admin/periods/store">
-        <div class="per-modal-body">
+        openGM({
+            title: 'New Leave Period',
+            html: `
+        <form method="POST" action="/leave-system/public/admin/periods/store" style="display:contents;">
+        <div class="gm-body">
             <div class="per-info-box">
                 <b>📅 15-Month Period SOP</b>
                 Periods at ICS run for 15 months (e.g. Jan 2025 → Mar 2026).
@@ -644,7 +518,7 @@
             <div class="per-grid">
                 <div class="per-fg full">
                     <label>Period Name <span style="color:#dc2626;">*</span></label>
-                    <input type="text" name="name" required placeholder="e.g. Leave Period 2025" autofocus>
+                    <input type="text" name="name" required placeholder="e.g. Leave Period 2025">
                 </div>
                 <div class="per-fg">
                     <label>Start Date <span style="color:#dc2626;">*</span></label>
@@ -657,49 +531,45 @@
                 </div>
             </div>
         </div>
-        <div class="per-modal-ft">
-            <button type="button" class="per-btn-cancel" onclick="closePerModal()">Cancel</button>
-            <button type="submit" class="per-btn-save">Create Period</button>
+        <div class="gm-ft">
+            <button type="button" class="gm-btn-cancel" onclick="closeGM()">Cancel</button>
+            <button type="submit" class="gm-btn-save">Create Period</button>
         </div>
-        </form>
-    </div>
-    </div>`;
+        </form>`,
+            onOpen: () => {
+                const s = document.getElementById('perStart');
+                const e = document.getElementById('perEnd');
+                const dur = document.getElementById('perDuration');
 
-        // Auto-suggest end date = start + 15 months, show duration
-        const s = document.getElementById('perStart');
-        const e = document.getElementById('perEnd');
-        const dur = document.getElementById('perDuration');
+                function updateDuration() {
+                    if (!s.value || !e.value) {
+                        dur.textContent = '';
+                        return;
+                    }
+                    const ms = new Date(e.value) - new Date(s.value);
+                    if (ms <= 0) {
+                        dur.textContent = '⚠ End must be after start';
+                        dur.style.color = '#dc2626';
+                        return;
+                    }
+                    const months = Math.round(ms / (30.44 * 86400000));
+                    dur.textContent = months + ' month' + (months !== 1 ? 's' : '');
+                    dur.style.color = months === 15 ? '#16a34a' : '#f97316';
+                }
 
-        function updateDuration() {
-            if (!s.value || !e.value) {
-                dur.textContent = '';
-                return;
+                s.addEventListener('change', function() {
+                    if (s.value && !e.value) {
+                        const d = new Date(s.value);
+                        d.setMonth(d.getMonth() + 15);
+                        d.setDate(d.getDate() - 1);
+                        e.value = d.toISOString().slice(0, 10);
+                    }
+                    updateDuration();
+                });
+                e.addEventListener('change', updateDuration);
+                document.querySelector('.gm-body input[name="name"]')?.focus();
             }
-            const ms = new Date(e.value) - new Date(s.value);
-            if (ms <= 0) {
-                dur.textContent = '⚠ End must be after start';
-                dur.style.color = '#dc2626';
-                return;
-            }
-            const months = Math.round(ms / (30.44 * 86400000));
-            dur.textContent = months + ' month' + (months !== 1 ? 's' : '');
-            dur.style.color = months === 15 ? '#16a34a' : '#f97316';
-        }
-
-        s.addEventListener('change', function() {
-            if (s.value && !e.value) {
-                const d = new Date(s.value);
-                d.setMonth(d.getMonth() + 15);
-                d.setDate(d.getDate() - 1);
-                e.value = d.toISOString().slice(0, 10);
-            }
-            updateDuration();
         });
-        e.addEventListener('change', updateDuration);
-    }
-
-    function closePerModal() {
-        document.getElementById('perModalRoot').innerHTML = '';
     }
 </script>
 

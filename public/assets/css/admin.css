@@ -430,6 +430,31 @@ tbody tr:last-child td {
 
 
 /* ═══════════════════════════════════════════════════════════
+   CSS NAMESPACE CONVENTION
+   ─────────────────────────────────────────────────────────
+   Global (this file):    .btn-*  .gm-*  .flash-*  .alert-*
+                          .empty-state  .badge-*  .form-*
+
+   Per-page scoped (do NOT use across pages):
+     admin_balances.php   → .bal-*
+     admin_holidays.php   → .hol-*
+     admin_leave_types    → .lt-*
+     admin_periods.php    → .per-*
+     admin_requests.php   → .req-*
+     admin_settings.php   → .st-*
+     admin_users.php      → .u-*
+     calendar.php         → .gcal-*
+     dashboard_admin.php  → .dash-*  .dstat-*
+     dashboard_employee   → .ed-*
+     leave_create.php     → .lc-*
+     my_data.php          → .md-*
+
+   Modal shell: ALWAYS use openGM() + .gm-* — never create
+   local modal backdrops or duplicate modal CSS per page.
+═══════════════════════════════════════════════════════════ */
+
+
+/* ═══════════════════════════════════════════════════════════
    BUTTONS
    .btn is the base — combine with modifier: btn btn-primary
 ═══════════════════════════════════════════════════════════ */
@@ -473,6 +498,15 @@ tbody tr:last-child td {
     background: var(--primary-dark);
     transform: translateY(-1px);
     box-shadow: 0 4px 14px var(--primary-glow);
+}
+
+.btn-primary:disabled,
+.btn.btn-primary:disabled {
+    background: var(--border);
+    color: var(--text-muted);
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
 }
 
 .btn-outline,

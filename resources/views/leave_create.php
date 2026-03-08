@@ -508,33 +508,7 @@
     }
 
     /* Submit */
-    .lc-submit {
-        width: 100%;
-        padding: 12px;
-        background: #f97316;
-        color: white;
-        border: none;
-        border-radius: 10px;
-        font-size: 14px;
-        font-weight: 700;
-        cursor: pointer;
-        transition: all .15s ease;
-        margin-top: 4px;
-    }
-
-    .lc-submit:hover {
-        background: #ea580c;
-        transform: translateY(-1px);
-        box-shadow: 0 4px 14px rgba(249, 115, 22, 0.3);
-    }
-
-    .lc-submit:disabled {
-        background: #e5e7eb;
-        color: #94a3b8;
-        cursor: not-allowed;
-        transform: none;
-        box-shadow: none;
-    }
+    /* lc-submit removed — uses global .btn-primary (disabled state now in admin.css) */
 
     /* Alerts */
     .lc-alert-success {
@@ -834,7 +808,7 @@ $next = date('Y-m', strtotime('+1 month', strtotime($monthStart)));
                             <span class="lc-balance-val" id="balanceVal">—</span>
                         </div>
 
-                        <button type="submit" class="lc-submit" id="submitBtn">
+                        <button type="submit" class="btn-primary" style="width:100%;padding:12px;font-size:14px;font-weight:700;margin-top:4px;justify-content:center;" id="submitBtn">
                             Submit Leave Request
                         </button>
 

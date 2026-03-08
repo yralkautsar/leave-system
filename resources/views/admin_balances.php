@@ -299,96 +299,7 @@ $periods    = $periods    ?? [];
     }
 
     /* ── Modal ──────────────────────────────────────────── */
-    .bal-modal-bd {
-        position: fixed;
-        inset: 0;
-        background: rgba(0, 0, 0, 0.4);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        z-index: 9999;
-        animation: balFade .15s ease;
-    }
-
-    @keyframes balFade {
-        from {
-            opacity: 0
-        }
-
-        to {
-            opacity: 1
-        }
-    }
-
-    .bal-modal {
-        background: #fff;
-        border-radius: 18px;
-        width: 480px;
-        max-width: 95vw;
-        box-shadow: 0 24px 64px rgba(0, 0, 0, 0.2);
-        animation: balSlide .18s ease;
-        overflow: hidden;
-    }
-
-    @keyframes balSlide {
-        from {
-            opacity: 0;
-            transform: translateY(12px)
-        }
-
-        to {
-            opacity: 1;
-            transform: translateY(0)
-        }
-    }
-
-    .bal-modal-hd {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 20px 24px 16px;
-        border-bottom: 1px solid #e5e7eb;
-    }
-
-    .bal-modal-hd h3 {
-        margin: 0;
-        font-size: 15px;
-        font-weight: 700;
-        color: #0f172a;
-    }
-
-    .bal-modal-x {
-        width: 28px;
-        height: 28px;
-        border-radius: 8px;
-        border: none;
-        background: none;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: #94a3b8;
-        font-size: 18px;
-        line-height: 1;
-        transition: .15s;
-    }
-
-    .bal-modal-x:hover {
-        background: #f1f5f9;
-        color: #374151;
-    }
-
-    .bal-modal-body {
-        padding: 20px 24px;
-    }
-
-    .bal-modal-ft {
-        padding: 14px 24px;
-        border-top: 1px solid #e5e7eb;
-        display: flex;
-        justify-content: flex-end;
-        gap: 10px;
-    }
+    /* bal-modal shell CSS removed — uses global openGM() + .gm-* */
 
     /* ── Context card inside modal ──────────────────────── */
     .bal-ctx {
@@ -551,37 +462,7 @@ $periods    = $periods    ?? [];
     }
 
     /* ── Buttons ────────────────────────────────────────── */
-    .bal-btn-cancel {
-        padding: 9px 20px;
-        border-radius: 9px;
-        font-size: 13px;
-        font-weight: 500;
-        border: 1px solid #e5e7eb;
-        background: #fff;
-        color: #374151;
-        cursor: pointer;
-        transition: .15s;
-    }
-
-    .bal-btn-cancel:hover {
-        background: #f8fafc;
-    }
-
-    .bal-btn-save {
-        padding: 9px 22px;
-        border-radius: 9px;
-        font-size: 13px;
-        font-weight: 600;
-        border: none;
-        color: #fff;
-        cursor: pointer;
-        transition: .15s;
-    }
-
-    .bal-btn-save:hover {
-        transform: translateY(-1px);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, .15);
-    }
+    /* bal-btn-cancel/save removed — uses gm-btn-cancel/save inside openGM() */
 
     /* ── History ─────────────────────────────────────────── */
     .bal-hist-wrap {
@@ -886,7 +767,6 @@ $periods    = $periods    ?? [];
     </table>
 </div>
 
-<div id="balModalRoot"></div>
 
 <script>
     const currentFilters = {
@@ -907,15 +787,11 @@ $periods    = $periods    ?? [];
 
     function renderAdjModal(mode) {
         const b = _adjData;
-        document.getElementById('balModalRoot').innerHTML = `
-    <div class="bal-modal-bd" onclick="if(event.target===this)closeBalModal()">
-    <div class="bal-modal">
-        <div class="bal-modal-hd">
-            <h3>Adjust Leave Balance</h3>
-            <button type="button" class="bal-modal-x" onclick="closeBalModal()">✕</button>
-        </div>
+        openGM({
+            title: 'Adjust Leave Balance',
+            html: `
         <form method="POST" action="/leave-system/public/admin/balance-adjust"
-              id="adjForm" onsubmit="return submitAdj(event)">
+              id="adjForm" onsubmit="return submitAdj(event)" style="display:contents;">
             <input type="hidden" name="balance_id"    value="${b.balance_id}">
             <input type="hidden" name="mode"          id="adjMode" value="${mode}">
             <input type="hidden" name="days"          id="adjDays" value="">
@@ -923,9 +799,7 @@ $periods    = $periods    ?? [];
             <input type="hidden" name="type_filter"   value="${currentFilters.type}">
             <input type="hidden" name="search_filter" value="${currentFilters.search}">
 
-            <div class="bal-modal-body">
-
-                <!-- Stats context -->
+            <div class="gm-body">
                 <div class="bal-ctx">
                     <div class="bal-ctx-name">${escH(b.employee_name)}</div>
                     <div class="bal-ctx-meta">${escH(b.leave_type)} &middot; ${escH(b.period_name)}</div>
@@ -945,7 +819,6 @@ $periods    = $periods    ?? [];
                     </div>
                 </div>
 
-                <!-- Mode selector -->
                 <div class="bal-mode-tabs">
                     <button type="button" id="tabAdd"
                         class="bal-mode-tab ${mode==='add'?'active-add':''}"
@@ -958,10 +831,8 @@ $periods    = $periods    ?? [];
                         onclick="switchMode('set')">✎ Set Quota</button>
                 </div>
 
-                <!-- Dynamic input -->
                 <div id="adjInputArea">${buildInput(mode, b)}</div>
 
-                <!-- Reason -->
                 <div class="bal-fg-m">
                     <label>Reason (optional)</label>
                     <input type="text" name="reason"
@@ -969,18 +840,16 @@ $periods    = $periods    ?? [];
                 </div>
             </div>
 
-            <div class="bal-modal-ft">
-                <button type="button" class="bal-btn-cancel" onclick="closeBalModal()">Cancel</button>
-                <button type="submit" class="bal-btn-save" id="adjSaveBtn"
+            <div class="gm-ft">
+                <button type="button" class="gm-btn-cancel" onclick="closeGM()">Cancel</button>
+                <button type="submit" class="gm-btn-save" id="adjSaveBtn"
                     style="background:${modeBtnColor(mode)};">
                     ${modeBtnLabel(mode)}
                 </button>
             </div>
-        </form>
-    </div>
-    </div>`;
-
-        attachInput(mode);
+        </form>`,
+            onOpen: () => attachInput(mode)
+        });
     }
 
     function buildInput(mode, b) {
@@ -1107,14 +976,11 @@ $periods    = $periods    ?? [];
        HISTORY MODAL
     ───────────────────────────────────────────────────────── */
     async function openHistModal(balanceId, empName, leaveType) {
-        document.getElementById('balModalRoot').innerHTML = `
-    <div class="bal-modal-bd" onclick="if(event.target===this)closeBalModal()">
-    <div class="bal-modal">
-        <div class="bal-modal-hd">
-            <h3>Adjustment History</h3>
-            <button type="button" class="bal-modal-x" onclick="closeBalModal()">✕</button>
-        </div>
-        <div class="bal-modal-body">
+        openGM({
+            title: 'Adjustment History',
+            size: 'lg',
+            html: `
+        <div class="gm-body">
             <div class="bal-ctx">
                 <div class="bal-ctx-name">${escH(empName)}</div>
                 <div class="bal-ctx-meta">${escH(leaveType)}</div>
@@ -1123,11 +989,10 @@ $periods    = $periods    ?? [];
                 Loading…
             </div>
         </div>
-        <div class="bal-modal-ft">
-            <button type="button" class="bal-btn-cancel" onclick="closeBalModal()">Close</button>
-        </div>
-    </div>
-    </div>`;
+        <div class="gm-ft">
+            <button type="button" class="gm-btn-cancel" onclick="closeGM()">Close</button>
+        </div>`
+        });
 
         try {
             const res = await fetch(`/leave-system/public/admin/balance-history?balance_id=${balanceId}`);
@@ -1150,20 +1015,14 @@ $periods    = $periods    ?? [];
                 </tr>`).join('') +
                     `</tbody></table></div>`;
             }
-            document.getElementById('histContent').innerHTML = html;
+            const el = document.getElementById('histContent');
+            if (el) el.innerHTML = html;
         } catch (e) {
-            document.getElementById('histContent').innerHTML =
-                '<p style="color:#dc2626;font-size:13px;text-align:center;">Failed to load history.</p>';
+            const el = document.getElementById('histContent');
+            if (el) el.innerHTML = '<p style="color:#dc2626;font-size:13px;text-align:center;">Failed to load history.</p>';
         }
     }
-
-    function closeBalModal() {
-        document.getElementById('balModalRoot').innerHTML = '';
-    }
-
-    function escH(s) {
-        return String(s ?? '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-    }
+    /* closeBalModal + local escH removed — use closeGM() and global escH() from layout.php */
 </script>
 
 <?php

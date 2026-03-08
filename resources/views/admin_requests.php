@@ -569,23 +569,16 @@ $badgeClass = [
 </style>
 
 <!-- ══ DETAIL MODAL ══ -->
-<!-- detail modal uses globalModalRoot -->
-
 <script>
     async function openDetailModal(id) {
-        document.getElementById('globalModalRoot').innerHTML = `
-        <div class="gm-bd">
-            <div class="gm-box gm-box-lg">
-                <div class="gm-hd">
-                    <h3>Leave Request</h3>
-                    <button type="button" class="gm-x" onclick="closeDetailModal()">✕</button>
-                </div>
-                <div class="gm-body" style="text-align:center;padding:48px 0;color:#94a3b8;">
+        openGM({
+            title: 'Leave Request',
+            size: 'lg',
+            html: `<div class="gm-body" style="text-align:center;padding:48px 0;color:#94a3b8;">
                     <div class="req-spinner"></div>
                     <p style="margin-top:14px;font-size:13px;">Loading…</p>
-                </div>
-            </div>
-        </div>`;
+               </div>`
+        });
 
         try {
             const res = await fetch(`/leave-system/public/admin/requests/${id}/detail`);
@@ -633,7 +626,7 @@ $badgeClass = [
             }
 
             document.getElementById('globalModalRoot').innerHTML = `
-            <div class="gm-bd" onclick="if(event.target===this)closeDetailModal()">
+            <div class="gm-bd" onclick="if(event.target===this)closeGM()">
                 <div class="gm-box gm-box-lg" style="max-height:88vh;">
 
                     <!-- Header -->
@@ -649,7 +642,7 @@ $badgeClass = [
                             <span class="badge" style="background:${sc}18;color:${sc};border:1px solid ${sc}40;font-size:12px;padding:4px 10px;border-radius:999px;">
                                 ${data.status.charAt(0).toUpperCase()+data.status.slice(1)}
                             </span>
-                            <button type="button" class="gm-x" onclick="closeDetailModal()">✕</button>
+                            <button type="button" class="gm-x" onclick="closeGM()">✕</button>
                         </div>
                     </div>
 
@@ -713,12 +706,12 @@ $badgeClass = [
                     <!-- Footer -->
                     <div class="gm-ft">
                         ${data.status === 'pending' ? `
-                        <button class="gm-btn-danger" onclick="closeDetailModal();openRejectModal(${data.id})">Reject</button>
+                        <button class="gm-btn-danger" onclick="closeGM();openRejectModal(${data.id})">Reject</button>
                         <form method="POST" action="/leave-system/public/approve" style="margin:0;">
                             <input type="hidden" name="id" value="${data.id}">
-                            <button class="gm-btn-save" style="background:#16a34a;" onclick="closeDetailModal()">Approve</button>
+                            <button class="gm-btn-save" style="background:#16a34a;" onclick="closeGM()">Approve</button>
                         </form>
-                        ` : `<button class="gm-btn-cancel" onclick="closeDetailModal()">Close</button>`}
+                        ` : `<button class="gm-btn-cancel" onclick="closeGM()">Close</button>`}
                     </div>
 
                 </div>
@@ -726,19 +719,19 @@ $badgeClass = [
 
         } catch (e) {
             document.getElementById('globalModalRoot').innerHTML = `
-            <div class="gm-bd" onclick="if(event.target===this)closeDetailModal()">
+            <div class="gm-bd" onclick="if(event.target===this)closeGM()">
                 <div class="gm-box gm-box-sm">
-                    <div class="gm-hd"><h3>Error</h3><button class="gm-x" onclick="closeDetailModal()">✕</button></div>
+                    <div class="gm-hd"><h3>Error</h3><button class="gm-x" onclick="closeGM()">✕</button></div>
                     <div class="gm-body"><p style="color:#dc2626;font-size:13px;margin:0;">Failed to load: ${e.message}</p></div>
                     <div class="gm-ft">
-                        <button class="gm-btn-cancel" onclick="closeDetailModal()">Close</button>
+                        <button class="gm-btn-cancel" onclick="closeGM()">Close</button>
                     </div>
                 </div>
             </div>`;
         }
     }
 
-    function closeDetailModal() {
+    function closeGM() {
         document.getElementById('globalModalRoot').innerHTML = '';
     }
 

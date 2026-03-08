@@ -408,22 +408,7 @@
     }
 
     /* Cancel button in recent table */
-    .ed-cancel-btn {
-        padding: 4px 10px;
-        font-size: 11.5px;
-        border: 1.5px solid #fca5a5;
-        border-radius: 6px;
-        color: #b91c1c;
-        background: white;
-        cursor: pointer;
-        transition: all .12s ease;
-        white-space: nowrap;
-    }
-
-    .ed-cancel-btn:hover {
-        background: #fef2f2;
-        border-color: #f87171;
-    }
+    /* ed-cancel-btn removed — uses global .btn-outline-danger */
 </style>
 
 <?php
@@ -589,7 +574,7 @@ $userName = explode(' ', $_SESSION['user']['name'])[0];
                                 <form method="POST" action="/leave-system/public/cancel"
                                     onsubmit="return confirm('Cancel this leave request?')">
                                     <input type="hidden" name="id" value="<?= $h['id'] ?>">
-                                    <button type="submit" class="ed-cancel-btn">Cancel</button>
+                                    <button type="submit" class="btn-outline-danger" style="padding:4px 10px;font-size:11.5px;">Cancel</button>
                                 </form>
                             <?php endif; ?>
                         </td>

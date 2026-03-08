@@ -123,164 +123,7 @@
         cursor: not-allowed;
     }
 
-    .lt-modal-backdrop {
-        position: fixed;
-        inset: 0;
-        background: rgba(0, 0, 0, 0.35);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        z-index: 9999;
-        animation: ltFade .15s ease;
-    }
-
-    @keyframes ltFade {
-        from {
-            opacity: 0
-        }
-
-        to {
-            opacity: 1
-        }
-    }
-
-    .lt-modal {
-        background: #fff;
-        border-radius: 16px;
-        width: 420px;
-        max-width: 95vw;
-        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.18);
-        animation: ltSlide .18s ease;
-        overflow: hidden;
-    }
-
-    @keyframes ltSlide {
-        from {
-            opacity: 0;
-            transform: translateY(10px)
-        }
-
-        to {
-            opacity: 1;
-            transform: translateY(0)
-        }
-    }
-
-    .lt-modal-hd {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 20px 24px 16px;
-        border-bottom: 1px solid #e5e7eb;
-    }
-
-    .lt-modal-hd h3 {
-        margin: 0;
-        font-size: 15px;
-        font-weight: 700;
-        color: #0f172a;
-    }
-
-    .lt-modal-x {
-        width: 26px;
-        height: 26px;
-        border-radius: 7px;
-        border: none;
-        background: none;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: #94a3b8;
-        transition: .15s;
-    }
-
-    .lt-modal-x:hover {
-        background: #f1f5f9;
-        color: #374151;
-    }
-
-    .lt-modal-body {
-        padding: 20px 24px;
-    }
-
-    .lt-modal-ft {
-        padding: 14px 24px;
-        border-top: 1px solid #e5e7eb;
-        display: flex;
-        justify-content: flex-end;
-        gap: 10px;
-    }
-
-    .lt-fg {
-        display: flex;
-        flex-direction: column;
-        gap: 5px;
-        margin-bottom: 14px;
-    }
-
-    .lt-fg label {
-        font-size: 12px;
-        font-weight: 600;
-        color: #64748b;
-        text-transform: uppercase;
-        letter-spacing: .04em;
-    }
-
-    .lt-fg input {
-        padding: 9px 12px;
-        border: 1.5px solid #e5e7eb;
-        border-radius: 8px;
-        font-size: 13.5px;
-        color: #0f172a;
-        outline: none;
-        width: 100%;
-        box-sizing: border-box;
-        transition: .15s;
-    }
-
-    .lt-fg input:focus {
-        border-color: #f97316;
-        box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.15);
-    }
-
-    .lt-hint {
-        font-size: 11.5px;
-        color: #94a3b8;
-        margin-top: 3px;
-    }
-
-    .lt-btn-cancel {
-        padding: 8px 18px;
-        border-radius: 8px;
-        font-size: 13px;
-        font-weight: 500;
-        border: 1px solid #e5e7eb;
-        background: #fff;
-        color: #374151;
-        cursor: pointer;
-        transition: .15s;
-    }
-
-    .lt-btn-cancel:hover {
-        background: #f8fafc;
-    }
-
-    .lt-btn-save {
-        padding: 8px 20px;
-        border-radius: 8px;
-        font-size: 13px;
-        font-weight: 600;
-        border: none;
-        background: #f97316;
-        color: #fff;
-        cursor: pointer;
-        transition: .15s;
-    }
-
-    .lt-btn-save:hover {
-        background: #ea580c;
-    }
+    /* lt-modal-* shell CSS removed — uses global openGM() + .gm-* from admin.css */
 </style>
 
 <div class="lt-header">
@@ -370,8 +213,6 @@
     </table>
 </div>
 
-<div id="ltModalRoot"></div>
-
 <script>
     function openLtModal(t) {
         const isEdit = !!t;
@@ -380,43 +221,32 @@
             '/leave-system/public/admin/leave-types/store';
         const v = k => t ? (t[k] ?? '') : '';
 
-        document.getElementById('ltModalRoot').innerHTML = `
-    <div class="lt-modal-backdrop" onclick="if(event.target===this)closeLtModal()">
-    <div class="lt-modal">
-        <div class="lt-modal-hd">
-            <h3>${isEdit ? 'Edit Leave Type' : 'Add Leave Type'}</h3>
-            <button type="button" class="lt-modal-x" onclick="closeLtModal()">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-            </button>
-        </div>
-        <form method="POST" action="${action}">
-        <div class="lt-modal-body">
-            <div class="lt-fg">
+        openGM({
+            title: isEdit ? 'Edit Leave Type' : 'Add Leave Type',
+            size: 'sm',
+            html: `
+        <form method="POST" action="${action}" style="display:contents;">
+        <div class="gm-body">
+            <div class="gm-fg">
                 <label>Name <span style="color:#dc2626;">*</span></label>
-                <input type="text" name="name" value="${escH(v('name'))}" required autofocus
+                <input type="text" name="name" value="${escH(v('name'))}" required
                     placeholder="e.g. Annual Leave, Sick Leave">
             </div>
-            <div class="lt-fg">
+            <div class="gm-fg">
                 <label>Default Days per Period <span style="color:#dc2626;">*</span></label>
                 <input type="number" name="default_days" value="${v('default_days') || 0}" min="0" required>
-                <span class="lt-hint">Used when generating balances. Can be adjusted per employee after generation.</span>
+                <span class="gm-hint">Used when generating balances. Can be adjusted per employee after generation.</span>
             </div>
         </div>
-        <div class="lt-modal-ft">
-            <button type="button" class="lt-btn-cancel" onclick="closeLtModal()">Cancel</button>
-            <button type="submit" class="lt-btn-save">${isEdit ? 'Save Changes' : 'Add'}</button>
+        <div class="gm-ft">
+            <button type="button" class="gm-btn-cancel" onclick="closeGM()">Cancel</button>
+            <button type="submit" class="gm-btn-save">${isEdit ? 'Save Changes' : 'Add'}</button>
         </div>
-        </form>
-    </div>
-    </div>`;
-    }
-
-    function closeLtModal() {
-        document.getElementById('ltModalRoot').innerHTML = '';
-    }
-
-    function escH(s) {
-        return String(s ?? '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        </form>`,
+            onOpen: () => {
+                document.querySelector('.gm-body input[name="name"]')?.focus();
+            }
+        });
     }
 </script>
 
