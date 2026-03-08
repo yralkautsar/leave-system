@@ -62,6 +62,15 @@
         color: #f97316;
     }
 
+    .lc-nav-today {
+        width: auto;
+        padding: 0 12px;
+        font-size: 12px;
+        font-weight: 600;
+        color: #f97316;
+        border-color: #fed7aa;
+    }
+
     /* Grid */
     .lc-cal-body {
         padding: 16px 16px 20px;
@@ -594,6 +603,7 @@ $next = date('Y-m', strtotime('+1 month', strtotime($monthStart)));
             <h2><?= date('F Y', strtotime($monthStart)) ?></h2>
             <div class="lc-nav-btns">
                 <a href="?month=<?= $prev ?>" class="lc-nav-btn" title="Previous month">&#8249;</a>
+                <a href="?month=<?= date('Y-m') ?>" class="lc-nav-btn lc-nav-today" title="Go to today">Today</a>
                 <a href="?month=<?= $next ?>" class="lc-nav-btn" title="Next month">&#8250;</a>
             </div>
         </div>
@@ -784,28 +794,28 @@ $next = date('Y-m', strtotime('+1 month', strtotime($monthStart)));
                     <div class="lc-legend-dot" style="background:#16a34a;"></div>
                     <div>
                         <div class="lc-legend-label">Approved Leave</div>
-                        <div class="lc-legend-desc">Already approved (cannot overlap)</div>
+                        <div class="lc-legend-desc">Already approved — cannot overlap</div>
                     </div>
                 </div>
                 <div class="lc-legend-item">
                     <div class="lc-legend-dot" style="background:#f97316;"></div>
                     <div>
                         <div class="lc-legend-label">Pending Leave</div>
-                        <div class="lc-legend-desc">Awaiting approval (cannot overlap)</div>
+                        <div class="lc-legend-desc">Awaiting approval — cannot overlap</div>
                     </div>
                 </div>
                 <div class="lc-legend-item">
                     <div class="lc-legend-dot" style="background:#dc2626;"></div>
                     <div>
                         <div class="lc-legend-label">Public Holiday</div>
-                        <div class="lc-legend-desc">Grayed out (not a working day)</div>
+                        <div class="lc-legend-desc">Grayed out — not a working day</div>
                     </div>
                 </div>
                 <div class="lc-legend-item">
                     <div class="lc-legend-dot" style="background:#cbd5e1;border:1px solid #e2e8f0;"></div>
                     <div>
                         <div class="lc-legend-label">Weekend / Day Off</div>
-                        <div class="lc-legend-desc">Grayed out (outside your schedule)</div>
+                        <div class="lc-legend-desc">Grayed out — outside your schedule</div>
                     </div>
                 </div>
             </div>
