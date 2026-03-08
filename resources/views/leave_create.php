@@ -399,6 +399,27 @@
         line-height: 1.5;
     }
 
+    .lc-cal-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        margin-top: 14px;
+        font-size: 12px;
+        font-weight: 600;
+        color: #f97316;
+        text-decoration: none;
+        padding: 5px 12px;
+        border: 1.5px solid #fed7aa;
+        border-radius: 20px;
+        background: #fff7ed;
+        transition: background .15s, border-color .15s;
+    }
+
+    .lc-cal-link:hover {
+        background: #ffedd5;
+        border-color: #fb923c;
+    }
+
     /* Warning */
     .lc-warn {
         background: #fffbeb;
@@ -709,6 +730,14 @@ $next = date('Y-m', strtotime('+1 month', strtotime($monthStart)));
                     </svg>
                 </div>
                 <p>Click any date on the<br>calendar to start your<br>leave request.</p>
+                <a href="/leave-system/public/calendar" target="_blank" class="lc-cal-link">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                        <polyline points="15 3 21 3 21 9" />
+                        <line x1="10" y1="14" x2="21" y2="3" />
+                    </svg>
+                    View team calendar
+                </a>
             </div>
 
             <!-- Form (hidden until date selected) -->

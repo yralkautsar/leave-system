@@ -186,7 +186,14 @@ if ($deptFilter) {
                                         <?= date('d M', strtotime($r['start_date'])) ?>
                                         <?= ($r['start_date'] !== $r['end_date']) ? '–' . date('d M', strtotime($r['end_date'])) : '' ?>
                                     </span>
-                                    <span class="dash-req-days"><?= $r['total_days'] ?> day<?= $r['total_days'] > 1 ? 's' : '' ?></span>
+                                    <span class="dash-req-days">
+                                        <?= $r['total_days'] ?> day<?= $r['total_days'] > 1 ? 's' : '' ?>
+                                        <?php if (($r['duration_type'] ?? '') === 'half_am'): ?>
+                                            <span class="dur-tag">AM</span>
+                                        <?php elseif (($r['duration_type'] ?? '') === 'half_pm'): ?>
+                                            <span class="dur-tag">PM</span>
+                                        <?php endif; ?>
+                                    </span>
                                 </div>
                             </div>
 
@@ -560,8 +567,12 @@ function _timeDiff(string $dt): string
     .dash-req-days {
         font-size: 12px;
         color: #94a3b8;
+        display: flex;
+        align-items: center;
+        gap: 5px;
     }
 
+    /* .dur-tag defined globally in admin.css */
     .dash-req-age {
         font-size: 11px;
         color: #94a3b8;

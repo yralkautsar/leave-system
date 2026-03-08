@@ -567,7 +567,14 @@ $userName = explode(' ', $_SESSION['user']['name'])[0];
                         <td><?= htmlspecialchars($h['leave_type']) ?></td>
                         <td><?= $h['start_date'] ?></td>
                         <td><?= $h['end_date'] ?></td>
-                        <td><?= (float)$h['total_days'] ?></td>
+                        <td>
+                            <?= (float)$h['total_days'] ?>
+                            <?php if (($h['duration_type'] ?? '') === 'half_am'): ?>
+                                <span class="dur-tag">AM</span>
+                            <?php elseif (($h['duration_type'] ?? '') === 'half_pm'): ?>
+                                <span class="dur-tag">PM</span>
+                            <?php endif; ?>
+                        </td>
                         <td><span class="bd bd-<?= $h['status'] ?>"><?= ucfirst($h['status']) ?></span></td>
                         <td>
                             <?php if ($h['status'] === 'pending'): ?>

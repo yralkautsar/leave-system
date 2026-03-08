@@ -219,6 +219,11 @@ $badgeClass = [
                         <!-- Days -->
                         <td>
                             <span class="badge badge-days"><?= $r['total_days'] ?> day<?= $r['total_days'] > 1 ? 's' : '' ?></span>
+                            <?php if (($r['duration_type'] ?? '') === 'half_am'): ?>
+                                <span class="dur-tag">AM</span>
+                            <?php elseif (($r['duration_type'] ?? '') === 'half_pm'): ?>
+                                <span class="dur-tag">PM</span>
+                            <?php endif; ?>
                         </td>
 
                         <!-- Submitted -->

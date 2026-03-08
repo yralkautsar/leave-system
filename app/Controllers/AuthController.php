@@ -290,7 +290,7 @@ class AuthController
 
         // ── Pending list for dashboard (oldest first, max 15) ─────
         $pendingSql = "
-            SELECT lr.id, lr.start_date, lr.end_date, lr.total_days, lr.created_at,
+            SELECT lr.id, lr.start_date, lr.end_date, lr.total_days, lr.duration_type, lr.created_at,
                    u.name  AS employee_name,
                    lt.name AS leave_type,
                    d.name  AS department

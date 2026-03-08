@@ -2059,6 +2059,7 @@ class LeaveController
                 lr.start_date,
                 lr.end_date,
                 lr.total_days,
+                lr.duration_type,
                 lr.status,
                 lr.created_at,
                 lr.approved_at,
