@@ -207,59 +207,112 @@
         background: #f97316;
     }
 
+    .lc-day.weekend {
+        background: #f1f5f9;
+        cursor: default;
+        pointer-events: none;
+    }
+
+    .lc-day.weekend .lc-day-num {
+        color: #94a3b8;
+    }
+
+    .lc-day.weekend:hover {
+        background: #f1f5f9;
+        border-color: transparent;
+        transform: none;
+    }
+
     .lc-day.is-holiday {
-        background: #fef2f2;
-        border-color: #fecaca;
+        background: #f1f5f9;
+        border-color: transparent;
+        cursor: default;
+        pointer-events: none;
     }
 
     .lc-day.is-holiday .lc-day-num {
-        color: #dc2626;
-        font-weight: 700;
+        color: #94a3b8;
+        font-weight: 600;
+        margin-bottom: 6px;
     }
 
     .lc-day.is-holiday:hover {
-        background: #fee2e2;
-        border-color: #f87171;
+        background: #f1f5f9;
+        border-color: transparent;
+        transform: none;
     }
 
-    /* Holiday label - bigger and bolder now */
+    /* Holiday label - red pill, below date number */
     .lc-hol {
-        position: absolute;
-        bottom: 3px;
-        left: 50%;
-        transform: translateX(-50%);
+        position: static;
+        transform: none;
+        display: inline-block;
         font-size: 10px;
-        font-weight: 600;
-        background: #dc2626;
+        font-weight: 700;
         color: white;
-        border-radius: 4px;
-        padding: 2px 5px;
-        white-space: nowrap;
-        max-width: 92%;
+        background: #dc2626;
+        border-radius: 5px;
+        padding: 2px 6px;
+        white-space: normal;
+        text-align: center;
+        line-height: 1.3;
+        word-break: break-word;
+        max-width: 100%;
         overflow: hidden;
-        text-overflow: ellipsis;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
     }
 
-    /* Legend */
-    .lc-legend {
-        display: flex;
-        gap: 18px;
-        padding: 12px 24px;
-        border-top: 1px solid #f1f5f9;
-        font-size: 11.5px;
-        color: #64748b;
+    /* Legend card */
+    .lc-legend-card {
+        background: white;
+        border-radius: 14px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.07);
+        padding: 18px 22px;
+        margin-top: 16px;
+    }
+
+    .lc-legend-title {
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .07em;
+        color: #94a3b8;
+        margin-bottom: 14px;
+    }
+
+    .lc-legend-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
     }
 
     .lc-legend-item {
         display: flex;
-        align-items: center;
-        gap: 6px;
+        align-items: flex-start;
+        gap: 10px;
     }
 
     .lc-legend-dot {
-        width: 8px;
-        height: 8px;
+        width: 10px;
+        height: 10px;
         border-radius: 50%;
+        flex-shrink: 0;
+        margin-top: 3px;
+    }
+
+    .lc-legend-label {
+        font-size: 12px;
+        font-weight: 600;
+        color: #374151;
+    }
+
+    .lc-legend-desc {
+        font-size: 11px;
+        color: #94a3b8;
+        margin-top: 1px;
+        line-height: 1.4;
     }
 
     /* ── Side panel ── */
@@ -612,18 +665,6 @@ $next = date('Y-m', strtotime('+1 month', strtotime($monthStart)));
             </div>
         </div>
 
-        <!-- Legend -->
-        <div class="lc-legend">
-            <div class="lc-legend-item">
-                <div class="lc-legend-dot" style="background:#16a34a;"></div> Approved leave
-            </div>
-            <div class="lc-legend-item">
-                <div class="lc-legend-dot" style="background:#f97316;"></div> Pending leave
-            </div>
-            <div class="lc-legend-item">
-                <div class="lc-legend-dot" style="background:#fef2f2; border:1px solid #fecaca;"></div> Holiday
-            </div>
-        </div>
 
     </div><!-- .lc-cal-card -->
 
@@ -649,8 +690,16 @@ $next = date('Y-m', strtotime('+1 month', strtotime($monthStart)));
             <div id="panelForm" style="display:none;">
 
                 <div class="lc-panel-hd">
-                    <h3 id="panelDateLabel">—</h3>
-                    <p id="panelDateSub">—</p>
+                    <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+                        <div>
+                            <h3 id="panelDateLabel">—</h3>
+                            <p id="panelDateSub">—</p>
+                        </div>
+                        <button type="button" onclick="clearSelection()"
+                            style="background:none;border:none;cursor:pointer;color:#94a3b8;font-size:18px;line-height:1;padding:2px 4px;transition:color .15s;"
+                            onmouseover="this.style.color='#dc2626'" onmouseout="this.style.color='#94a3b8'"
+                            title="Cancel selection">✕</button>
+                    </div>
                 </div>
 
                 <div class="lc-panel-body">
@@ -726,6 +775,42 @@ $next = date('Y-m', strtotime('+1 month', strtotime($monthStart)));
             </div>
 
         </div><!-- .lc-panel-card -->
+
+        <!-- LEGEND CARD -->
+        <div class="lc-legend-card">
+            <div class="lc-legend-title">Calendar Legend</div>
+            <div class="lc-legend-grid">
+                <div class="lc-legend-item">
+                    <div class="lc-legend-dot" style="background:#16a34a;"></div>
+                    <div>
+                        <div class="lc-legend-label">Approved Leave</div>
+                        <div class="lc-legend-desc">Already approved — cannot overlap</div>
+                    </div>
+                </div>
+                <div class="lc-legend-item">
+                    <div class="lc-legend-dot" style="background:#f97316;"></div>
+                    <div>
+                        <div class="lc-legend-label">Pending Leave</div>
+                        <div class="lc-legend-desc">Awaiting approval — cannot overlap</div>
+                    </div>
+                </div>
+                <div class="lc-legend-item">
+                    <div class="lc-legend-dot" style="background:#dc2626;"></div>
+                    <div>
+                        <div class="lc-legend-label">Public Holiday</div>
+                        <div class="lc-legend-desc">Grayed out — not a working day</div>
+                    </div>
+                </div>
+                <div class="lc-legend-item">
+                    <div class="lc-legend-dot" style="background:#cbd5e1;border:1px solid #e2e8f0;"></div>
+                    <div>
+                        <div class="lc-legend-label">Weekend / Day Off</div>
+                        <div class="lc-legend-desc">Grayed out — outside your schedule</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
     </div><!-- .lc-panel -->
 
 </div><!-- .lc-wrap -->
@@ -934,6 +1019,25 @@ $next = date('Y-m', strtotime('+1 month', strtotime($monthStart)));
 
     // Init
     updatePreview();
+
+    function clearSelection() {
+        // Reset calendar highlights
+        document.querySelectorAll('.lc-day').forEach(d => {
+            d.classList.remove('selected', 'in-range', 'range-start', 'range-end');
+        });
+
+        // Reset form
+        document.getElementById('fStartDate').value = '';
+        document.getElementById('fEndDate').value = '';
+        document.getElementById('fLeaveType').selectedIndex = 0;
+        document.getElementById('fDuration').selectedIndex = 0;
+
+        // Hide form, show empty state
+        document.getElementById('panelForm').style.display = 'none';
+        document.getElementById('panelEmpty').style.display = 'block';
+
+        updatePreview();
+    }
 </script>
 
 <?php
