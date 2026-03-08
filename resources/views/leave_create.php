@@ -207,19 +207,35 @@
         background: #f97316;
     }
 
-    /* Holiday badge */
+    .lc-day.is-holiday {
+        background: #fef2f2;
+        border-color: #fecaca;
+    }
+
+    .lc-day.is-holiday .lc-day-num {
+        color: #dc2626;
+        font-weight: 700;
+    }
+
+    .lc-day.is-holiday:hover {
+        background: #fee2e2;
+        border-color: #f87171;
+    }
+
+    /* Holiday label - bigger and bolder now */
     .lc-hol {
         position: absolute;
-        bottom: 2px;
+        bottom: 3px;
         left: 50%;
         transform: translateX(-50%);
-        font-size: 9px;
-        background: #fef2f2;
-        color: #b91c1c;
+        font-size: 10px;
+        font-weight: 600;
+        background: #dc2626;
+        color: white;
         border-radius: 4px;
-        padding: 1px 4px;
+        padding: 2px 5px;
         white-space: nowrap;
-        max-width: 90%;
+        max-width: 92%;
         overflow: hidden;
         text-overflow: ellipsis;
     }
@@ -562,6 +578,7 @@ $next = date('Y-m', strtotime('+1 month', strtotime($monthStart)));
                     $classes = ['lc-day'];
                     if ($isToday)  $classes[] = 'today';
                     if ($isWknd)   $classes[] = 'weekend';
+                    if ($isHol)    $classes[] = 'is-holiday';
                     if ($hasLeave) $classes[] = 'has-leave';
 
                     $dataAttrs  = "data-date=\"{$date}\"";

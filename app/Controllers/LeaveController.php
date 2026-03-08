@@ -87,7 +87,6 @@ class LeaveController
                 AND lb.leave_period_id IN (
                     SELECT id FROM leave_periods
                     WHERE start_date <= CURDATE() AND end_date >= CURDATE()
-                    LIMIT 1
                 )
             ORDER BY lt.name ASC
         ");
