@@ -1168,7 +1168,7 @@ class LeaveController
 
         // ── Auto-generate leave balances for all currently active periods ──
         try {
-            $leaveTypes = $db->query("SELECT * FROM leave_types WHERE default_days > 0")
+            $leaveTypes = $db->query("SELECT * FROM leave_types WHERE balance_source = 'period' AND default_days > 0")
                 ->fetchAll(PDO::FETCH_ASSOC);
 
             $activePeriodsStmt = $db->prepare("
@@ -1269,6 +1269,105 @@ class LeaveController
 
         $_SESSION['success'] = "User updated.";
         header("Location: /leave-system/public/admin/users");
+        exit;
+    }
+
+    public static function exportUsers()
+    {
+        self::authorizeAdmin();
+        $db = Database::connect();
+
+        // Reuse same filters as users() so export matches what admin sees
+        $search       = trim($_GET['search'] ?? '');
+        $roleFilter   = $_GET['role']   ?? '';
+        $deptFilter   = $_GET['dept']   ?? '';
+        $statusFilter = $_GET['status'] ?? '';
+
+        $query = "
+            SELECT
+                u.name,
+                u.nickname,
+                u.email,
+                u.religion,
+                u.role,
+                d.name  AS department,
+                j.name  AS job_title,
+                u.join_date,
+                u.is_active
+            FROM users u
+            LEFT JOIN departments d ON u.department_id = d.id
+            LEFT JOIN job_titles  j ON u.job_title_id  = j.id
+            WHERE 1=1
+        ";
+
+        $params = [];
+
+        if ($search) {
+            $query .= " AND (u.name LIKE :search OR u.email LIKE :search2)";
+            $params['search']  = "%$search%";
+            $params['search2'] = "%$search%";
+        }
+        if ($roleFilter) {
+            $query .= " AND u.role = :role";
+            $params['role'] = $roleFilter;
+        }
+        if ($deptFilter) {
+            $query .= " AND u.department_id = :dept";
+            $params['dept'] = $deptFilter;
+        }
+        if ($statusFilter === 'active') {
+            $query .= " AND u.is_active = 1";
+        } elseif ($statusFilter === 'suspended') {
+            $query .= " AND u.is_active = 0";
+        }
+
+        $query .= " ORDER BY u.name ASC";
+
+        $stmt = $db->prepare($query);
+        $stmt->execute($params);
+        $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        // Output CSV
+        $filename = 'users_export_' . date('Ymd_His') . '.csv';
+
+        header('Content-Type: text/csv; charset=UTF-8');
+        header('Content-Disposition: attachment; filename="' . $filename . '"');
+        header('Cache-Control: no-cache, no-store, must-revalidate');
+
+        $out = fopen('php://output', 'w');
+
+        // BOM for Excel UTF-8 compatibility
+        fprintf($out, chr(0xEF) . chr(0xBB) . chr(0xBF));
+
+        // Header row
+        fputcsv($out, [
+            'Full Name',
+            'Nickname',
+            'Email',
+            'Religion',
+            'Role',
+            'Department',
+            'Job Title',
+            'Join Date',
+            'Status',
+        ]);
+
+        // Data rows
+        foreach ($users as $u) {
+            fputcsv($out, [
+                $u['name'],
+                $u['nickname']   ?? '',
+                $u['email'],
+                $u['religion']   ?? '',
+                $u['role'] === 'admin_approver' ? 'Admin' : 'Employee',
+                $u['department'] ?? '',
+                $u['job_title']  ?? '',
+                $u['join_date']  ?? '',
+                $u['is_active']  ? 'Active' : 'Suspended',
+            ]);
+        }
+
+        fclose($out);
         exit;
     }
 
