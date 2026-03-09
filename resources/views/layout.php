@@ -231,7 +231,10 @@ function isActive(string $path, string $match, bool $exact = false): string
 
         <!-- Mobile overlay -->
         <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
-        ════════════════════════════════════════ -->
+
+        <!-- ════════════════════════════════════════
+     MAIN
+════════════════════════════════════════ -->
         <main class="main">
 
             <!-- Topbar -->

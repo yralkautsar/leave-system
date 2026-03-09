@@ -385,13 +385,23 @@ $roleLabel   = ['employee' => 'Employee', 'admin_approver' => 'Admin'];
         <h2 style="margin:0 0 4px;">Users</h2>
         <p class="subtext" style="margin:0;">Manage employee accounts, roles, and reporting lines</p>
     </div>
-    <button class="btn-primary" onclick="openUserModal()">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="vertical-align:middle;margin-right:4px;">
-            <line x1="12" y1="5" x2="12" y2="19" />
-            <line x1="5" y1="12" x2="19" y2="12" />
-        </svg>
-        Add User
-    </button>
+    <div style="display:flex;gap:10px;align-items:center;">
+        <a href="/leave-system/public/admin/users/export?<?= http_build_query(array_filter([
+                                                                'search' => $_GET['search'] ?? '',
+                                                                'role'   => $_GET['role']   ?? '',
+                                                                'dept'   => $_GET['dept']   ?? '',
+                                                                'status' => $_GET['status'] ?? '',
+                                                            ])) ?>" class="btn-outline" style="font-size:13px;padding:9px 14px;">
+            Export CSV
+        </a>
+        <button class="btn-primary" onclick="openUserModal()">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="vertical-align:middle;margin-right:4px;">
+                <line x1="12" y1="5" x2="12" y2="19" />
+                <line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+            Add User
+        </button>
+    </div>
 </div>
 
 <?php if (isset($_SESSION['success'])): ?>

@@ -203,6 +203,11 @@ if ($uri === '/leave-system/public/admin/users/reset-password' && $_SERVER['REQU
     exit;
 }
 
+if ($uri === '/leave-system/public/admin/users/export') {
+    LeaveController::exportUsers();
+    exit;
+}
+
 /* ==========================================================
    ADMIN – LEAVE PERIODS
 ========================================================== */
