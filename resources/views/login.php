@@ -162,7 +162,7 @@
     <div class="login-wrap">
 
         <div class="login-logo">
-            <img src="/leave-system/public/assets/black.png" alt="ICS">
+            <img src="/assets/black.png" alt="ICS">
         </div>
 
         <div class="login-card">
@@ -192,7 +192,7 @@
                 </div>
             <?php endif; ?>
 
-            <form method="POST" action="/leave-system/public/login">
+            <form method="POST" action="/login">
                 <div class="l-fg">
                     <label>Email</label>
                     <input type="email" name="email" required autofocus
@@ -204,7 +204,7 @@
                     <input type="password" name="password" required placeholder="••••••••">
                 </div>
                 <div class="l-forgot-row">
-                    <a href="/leave-system/public/forgot-password" class="l-forgot-link">Forgot password?</a>
+                    <a href="/forgot-password" class="l-forgot-link">Forgot password?</a>
                 </div>
                 <button type="submit" class="l-btn">Sign In</button>
             </form>

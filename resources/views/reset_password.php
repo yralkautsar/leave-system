@@ -187,7 +187,7 @@
     <div class="wrap">
 
         <div class="logo">
-            <img src="/leave-system/public/assets/black.png" alt="ICS">
+            <img src="/assets/black.png" alt="ICS">
         </div>
 
         <div class="card">
@@ -203,7 +203,7 @@
                     <h4>Link Expired or Invalid</h4>
                     <p>This password reset link has already been used or has expired.<br>Reset links are valid for 1 hour.</p>
                 </div>
-                <a href="/leave-system/public/forgot-password" class="btn" style="display:block;text-align:center;text-decoration:none;margin-top:20px;">
+                <a href="/forgot-password" class="btn" style="display:block;text-align:center;text-decoration:none;margin-top:20px;">
                     Request a new link
                 </a>
 
@@ -224,7 +224,7 @@
                     </div>
                 <?php endif; ?>
 
-                <form method="POST" action="/leave-system/public/reset-password">
+                <form method="POST" action="/reset-password">
                     <input type="hidden" name="token" value="<?= htmlspecialchars($token) ?>">
 
                     <div class="fg">
@@ -244,7 +244,7 @@
 
             <?php endif; ?>
 
-            <a href="/leave-system/public/login" class="back">← Back to login</a>
+            <a href="/login" class="back">← Back to login</a>
 
         </div>
 

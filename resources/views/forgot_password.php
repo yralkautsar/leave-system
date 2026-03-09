@@ -157,7 +157,7 @@
     <div class="wrap">
 
         <div class="logo">
-            <img src="/leave-system/public/assets/black.png" alt="ICS">
+            <img src="/assets/black.png" alt="ICS">
         </div>
 
         <div class="card">
@@ -187,7 +187,7 @@
                 </div>
             <?php endif; ?>
 
-            <form method="POST" action="/leave-system/public/forgot-password">
+            <form method="POST" action="/forgot-password">
                 <div class="fg">
                     <label>Email Address</label>
                     <input type="email" name="email" required autofocus
@@ -197,7 +197,7 @@
                 <button type="submit" class="btn">Send Reset Link</button>
             </form>
 
-            <a href="/leave-system/public/login" class="back">← Back to login</a>
+            <a href="/login" class="back">← Back to login</a>
 
         </div>
 

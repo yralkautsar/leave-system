@@ -80,7 +80,7 @@
                                         Delete
                                     </button>
                                 <?php else: ?>
-                                    <form method="POST" action="/leave-system/public/admin/job-titles/delete"
+                                    <form method="POST" action="/admin/job-titles/delete"
                                         style="display:inline"
                                         onsubmit="return confirm('Delete job title «<?= htmlspecialchars(addslashes($j['name'])) ?>»?')">
                                         <input type="hidden" name="id" value="<?= $j['id'] ?>">
@@ -102,7 +102,7 @@
             title: 'Add Job Title',
             size: 'sm',
             html: `
-        <form method="POST" action="/leave-system/public/admin/job-titles/store">
+        <form method="POST" action="/admin/job-titles/store">
             <div class="gm-body">
                 <div class="gm-fg">
                     <label>Job Title <span style="color:#dc2626">*</span></label>
@@ -122,7 +122,7 @@
             title: 'Edit Job Title',
             size: 'sm',
             html: `
-        <form method="POST" action="/leave-system/public/admin/job-titles/update/${id}">
+        <form method="POST" action="/admin/job-titles/update/${id}">
             <div class="gm-body">
                 <div class="gm-fg">
                     <label>Job Title <span style="color:#dc2626">*</span></label>

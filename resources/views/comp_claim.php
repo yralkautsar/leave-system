@@ -56,7 +56,7 @@ $claims = $histStmt->fetchAll(PDO::FETCH_ASSOC);
     <?php endif; ?>
 
     <div class="form-wrapper">
-        <form method="POST" action="/leave-system/public/comp-claim/store">
+        <form method="POST" action="/comp-claim/store">
 
             <div class="form-grid">
 

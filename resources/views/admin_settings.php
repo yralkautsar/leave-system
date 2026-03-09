@@ -199,7 +199,7 @@ $s = fn($key, $default = '') => htmlspecialchars($settings[$key] ?? $default);
 
     <div class="card">
 
-        <form method="POST" action="/leave-system/public/admin/settings/save">
+        <form method="POST" action="/admin/settings/save">
 
             <!-- ── Email Identity ── -->
             <div class="st-section">Email Identity</div>
@@ -311,7 +311,7 @@ $s = fn($key, $default = '') => htmlspecialchars($settings[$key] ?? $default);
             const fd = new FormData();
             fd.append('email', email);
 
-            const res = await fetch('/leave-system/public/admin/settings/test-email', {
+            const res = await fetch('/admin/settings/test-email', {
                 method: 'POST',
                 body: fd
             });

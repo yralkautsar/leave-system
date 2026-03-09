@@ -1,9 +1,9 @@
 <?php
 
 return [
-    'host' => '127.0.0.1',
-    'dbname' => 'leave_system_dev',
-    'username' => 'root',
-    'password' => '',
-    'charset' => 'utf8mb4'
+    'host'     => 'localhost',
+    'dbname'   => 'leave_system',
+    'username' => 'admin_leave',   // ← username dari Plesk
+    'password' => 'NakamaPower666',      // ← password dari Plesk
+    'charset'  => 'utf8mb4'
 ];

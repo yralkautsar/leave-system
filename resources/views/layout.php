@@ -1,12 +1,12 @@
 <?php
 if (!isset($_SESSION['user'])) {
-    header("Location: /leave-system/public/login");
+    header("Location: /login");
     exit;
 }
 
 if (!$_SESSION['user']['is_active']) {
     session_destroy();
-    header("Location: /leave-system/public/login");
+    header("Location: /login");
     exit;
 }
 
@@ -68,7 +68,7 @@ function isActive(string $path, string $match, bool $exact = false): string
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Leave Management — ICS Travel Group</title>
-    <link rel="stylesheet" href="/leave-system/public/assets/css/admin.css">
+    <link rel="stylesheet" href="/assets/css/admin.css">
 </head>
 
 <body>
@@ -82,15 +82,15 @@ function isActive(string $path, string $match, bool $exact = false): string
 
             <!-- Logo -->
             <div class="sidebar-logo">
-                <img src="/leave-system/public/assets/white.png" alt="ICS Travel Group">
+                <img src="/assets/white.png" alt="ICS Travel Group">
             </div>
 
             <!-- Navigation -->
             <nav class="nav">
 
                 <!-- Dashboard — both roles -->
-                <a href="/leave-system/public/dashboard"
-                    class="nav-link <?= isActive($currentPath, '/leave-system/public/dashboard', true) ?>">
+                <a href="/dashboard"
+                    class="nav-link <?= isActive($currentPath, '/dashboard', true) ?>">
                     <?= icon('dashboard') ?>
                     <span>Dashboard</span>
                 </a>
@@ -100,7 +100,7 @@ function isActive(string $path, string $match, bool $exact = false): string
                     <!-- ── Section: Requests ── -->
                     <div class="nav-section">Requests</div>
 
-                    <a href="/leave-system/public/admin/requests"
+                    <a href="/admin/requests"
                         class="nav-link <?= isActive($currentPath, '/admin/requests') ?>"
                         id="nav-requests">
                         <?= icon('requests') ?>
@@ -108,7 +108,7 @@ function isActive(string $path, string $match, bool $exact = false): string
                         <span class="nav-badge" id="pendingBadge" style="display:none;"></span>
                     </a>
 
-                    <a href="/leave-system/public/admin/comp-claims"
+                    <a href="/admin/comp-claims"
                         class="nav-link <?= isActive($currentPath, '/admin/comp-claims') ?>">
                         <?= icon('comp') ?>
                         <span>Comp Claims</span>
@@ -117,19 +117,19 @@ function isActive(string $path, string $match, bool $exact = false): string
                     <!-- ── Section: People ── -->
                     <div class="nav-section">People</div>
 
-                    <a href="/leave-system/public/admin/users"
+                    <a href="/admin/users"
                         class="nav-link <?= isActive($currentPath, '/admin/users') ?>">
                         <?= icon('users') ?>
                         <span>Users</span>
                     </a>
 
-                    <a href="/leave-system/public/admin/departments"
+                    <a href="/admin/departments"
                         class="nav-link <?= isActive($currentPath, '/admin/departments') ?>">
                         <?= icon('dept') ?>
                         <span>Departments</span>
                     </a>
 
-                    <a href="/leave-system/public/admin/job-titles"
+                    <a href="/admin/job-titles"
                         class="nav-link <?= isActive($currentPath, '/admin/job-titles') ?>">
                         <?= icon('jobtitle') ?>
                         <span>Job Titles</span>
@@ -138,25 +138,25 @@ function isActive(string $path, string $match, bool $exact = false): string
                     <!-- ── Section: Leave Config ── -->
                     <div class="nav-section">Leave Config</div>
 
-                    <a href="/leave-system/public/admin/periods"
+                    <a href="/admin/periods"
                         class="nav-link <?= isActive($currentPath, '/admin/periods') || isActive($currentPath, '/admin/leave-types') ? 'active' : '' ?>">
                         <?= icon('periods') ?>
                         <span>Leave Periods</span>
                     </a>
 
-                    <a href="/leave-system/public/admin/balances"
+                    <a href="/admin/balances"
                         class="nav-link <?= isActive($currentPath, '/admin/balances') ?>">
                         <?= icon('balances') ?>
                         <span>Leave Balances</span>
                     </a>
 
-                    <a href="/leave-system/public/admin/holidays"
+                    <a href="/admin/holidays"
                         class="nav-link <?= isActive($currentPath, '/admin/holidays') ?>">
                         <?= icon('holidays') ?>
                         <span>Public Holidays</span>
                     </a>
 
-                    <a href="/leave-system/public/admin/leave-grants"
+                    <a href="/admin/leave-grants"
                         class="nav-link <?= isActive($currentPath, '/admin/leave-grants') ?>">
                         <?= icon('grant') ?>
                         <span>Leave Grants</span>
@@ -167,21 +167,21 @@ function isActive(string $path, string $match, bool $exact = false): string
                     <!-- ── Section: My Leave ── -->
                     <div class="nav-section">My Leave</div>
 
-                    <a href="/leave-system/public/leave"
-                        class="nav-link <?= isActive($currentPath, '/leave-system/public/leave', true) ?>"
+                    <a href="/leave"
+                        class="nav-link <?= isActive($currentPath, '/leave', true) ?>"
                         data-tooltip="Submit Leave">
                         <?= icon('submit') ?>
                         <span>Submit Leave</span>
                     </a>
 
-                    <a href="/leave-system/public/my-data"
+                    <a href="/my-data"
                         class="nav-link <?= isActive($currentPath, '/my-data') ?>"
                         data-tooltip="My Data">
                         <?= icon('user') ?>
                         <span>My Data</span>
                     </a>
 
-                    <a href="/leave-system/public/comp-claim"
+                    <a href="/comp-claim"
                         class="nav-link <?= isActive($currentPath, '/comp-claim') ?>"
                         data-tooltip="Compensate Leave">
                         <?= icon('comp') ?>
@@ -193,14 +193,14 @@ function isActive(string $path, string $match, bool $exact = false): string
                 <!-- Calendar — both roles -->
                 <div class="nav-section">Overview</div>
 
-                <a href="/leave-system/public/calendar"
+                <a href="/calendar"
                     class="nav-link <?= isActive($currentPath, 'calendar') ?>">
                     <?= icon('calendar') ?>
                     <span>Calendar</span>
                 </a>
 
                 <?php if ($isAdmin): ?>
-                    <a href="/leave-system/public/admin/settings"
+                    <a href="/admin/settings"
                         class="nav-link <?= isActive($currentPath, 'settings') ?>">
                         <?= icon('settings') ?>
                         <span>Settings</span>
@@ -221,7 +221,7 @@ function isActive(string $path, string $match, bool $exact = false): string
                     </div>
                 </div>
 
-                <a href="/leave-system/public/logout" class="sidebar-logout" title="Logout">
+                <a href="/logout" class="sidebar-logout" title="Logout">
                     <?= icon('logout') ?>
                     <span>Logout</span>
                 </a>
@@ -240,19 +240,19 @@ function isActive(string $path, string $match, bool $exact = false): string
             <!-- Topbar -->
             <?php
             $pageTitles = [
-                '/leave-system/public/dashboard'         => 'Dashboard',
-                '/leave-system/public/admin/requests'    => 'Leave Requests',
-                '/leave-system/public/admin/users'       => 'Users',
-                '/leave-system/public/admin/departments' => 'Departments',
-                '/leave-system/public/admin/job-titles'  => 'Job Titles',
-                '/leave-system/public/admin/periods'     => 'Leave Periods',
-                '/leave-system/public/admin/leave-types' => 'Leave Types',
-                '/leave-system/public/admin/balances'    => 'Leave Balances',
-                '/leave-system/public/admin/holidays'    => 'Public Holidays',
-                '/leave-system/public/admin/settings'    => 'Settings',
-                '/leave-system/public/calendar'          => 'Calendar',
-                '/leave-system/public/leave'             => 'Submit Leave',
-                '/leave-system/public/my-data'           => 'My Data',
+                '/dashboard'         => 'Dashboard',
+                '/admin/requests'    => 'Leave Requests',
+                '/admin/users'       => 'Users',
+                '/admin/departments' => 'Departments',
+                '/admin/job-titles'  => 'Job Titles',
+                '/admin/periods'     => 'Leave Periods',
+                '/admin/leave-types' => 'Leave Types',
+                '/admin/balances'    => 'Leave Balances',
+                '/admin/holidays'    => 'Public Holidays',
+                '/admin/settings'    => 'Settings',
+                '/calendar'          => 'Calendar',
+                '/leave'             => 'Submit Leave',
+                '/my-data'           => 'My Data',
             ];
             $pageTitle = $pageTitles[$currentPath] ?? 'Leave Management';
             ?>
@@ -779,7 +779,7 @@ function isActive(string $path, string $match, bool $exact = false): string
     <?php if ($isAdmin): ?>
         <script>
             (function fetchPending() {
-                fetch('/leave-system/public/pending-count')
+                fetch('/pending-count')
                     .then(r => r.json())
                     .then(data => {
                         const badge = document.getElementById('pendingBadge');

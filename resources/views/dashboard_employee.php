@@ -476,7 +476,7 @@ $userName = !empty($_SESSION['user']['nickname'])
         <h2>Hello, <?= htmlspecialchars($userName) ?> </h2>
         <p>Here's your leave overview for today.</p>
     </div>
-    <a href="/leave-system/public/leave" class="ed-hero-btn">
+    <a href="/leave" class="ed-hero-btn">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
             <line x1="12" y1="5" x2="12" y2="19" />
             <line x1="5" y1="12" x2="19" y2="12" />
@@ -523,7 +523,7 @@ $userName = !empty($_SESSION['user']['nickname'])
         <?php foreach ($balances as $b):
             $pct   = $b['total_days'] > 0 ? round(($b['remaining_days'] / $b['total_days']) * 100) : 0;
             $low   = $pct <= 25 ? 'low' : '';
-            $href  = '/leave-system/public/my-data?tab=history&type=' . urlencode($b['leave_type']);
+            $href  = '/my-data?tab=history&type=' . urlencode($b['leave_type']);
         ?>
             <a href="<?= $href ?>" class="ed-bal-card" style="text-decoration:none;color:inherit;">
                 <div class="ed-bal-period">
@@ -553,7 +553,7 @@ $userName = !empty($_SESSION['user']['nickname'])
 
     <?php if ($compBalance > 0): ?>
         <!-- Comp Leave balance card -->
-        <a href="/leave-system/public/comp-claim" class="ed-bal-card ed-bal-comp" style="text-decoration:none;color:inherit;">
+        <a href="/comp-claim" class="ed-bal-card ed-bal-comp" style="text-decoration:none;color:inherit;">
             <div class="ed-bal-period" style="color:#7c3aed;">
                 <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                     <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
@@ -634,7 +634,7 @@ $userName = !empty($_SESSION['user']['nickname'])
 <div class="ed-card">
     <div class="ed-card-hd">
         <h3>Recent Requests</h3>
-        <a href="/leave-system/public/my-data">View all →</a>
+        <a href="/my-data">View all →</a>
     </div>
     <?php if (!empty($history)): ?>
         <table class="ed-table">
@@ -665,7 +665,7 @@ $userName = !empty($_SESSION['user']['nickname'])
                         <td><span class="bd bd-<?= $h['status'] ?>"><?= ucfirst($h['status']) ?></span></td>
                         <td>
                             <?php if ($h['status'] === 'pending'): ?>
-                                <form method="POST" action="/leave-system/public/cancel"
+                                <form method="POST" action="/cancel"
                                     onsubmit="return confirm('Cancel this leave request?')">
                                     <input type="hidden" name="id" value="<?= $h['id'] ?>">
                                     <button type="submit" class="btn-outline-danger" style="padding:4px 10px;font-size:11.5px;">Cancel</button>
@@ -677,7 +677,7 @@ $userName = !empty($_SESSION['user']['nickname'])
             </tbody>
         </table>
     <?php else: ?>
-        <div class="ed-empty">No leave requests yet. <a href="/leave-system/public/leave" style="color:#f97316;">Submit your first one →</a></div>
+        <div class="ed-empty">No leave requests yet. <a href="/leave" style="color:#f97316;">Submit your first one →</a></div>
     <?php endif; ?>
 </div>
 

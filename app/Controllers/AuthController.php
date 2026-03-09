@@ -29,13 +29,13 @@ class AuthController
 
         if (!$user || !password_verify($password, $user['password_hash'])) {
             $_SESSION['error'] = "Incorrect email or password.";
-            header("Location: /leave-system/public/login");
+            header("Location: /login");
             exit;
         }
 
         if (!$user['is_active']) {
             $_SESSION['error'] = "Your account has been suspended. Please contact HR.";
-            header("Location: /leave-system/public/login");
+            header("Location: /login");
             exit;
         }
 
@@ -48,7 +48,7 @@ class AuthController
             'is_active' => $user['is_active'],
         ];
 
-        header("Location: /leave-system/public/dashboard");
+        header("Location: /dashboard");
         exit;
     }
 
@@ -69,7 +69,7 @@ class AuthController
 
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
             $_SESSION['error'] = "Please enter a valid email address.";
-            header("Location: /leave-system/public/forgot-password");
+            header("Location: /forgot-password");
             exit;
         }
 
@@ -105,7 +105,7 @@ class AuthController
         }
 
         $_SESSION['success'] = "If that email is registered, you'll receive a reset link shortly. Check your inbox (and spam folder).";
-        header("Location: /leave-system/public/forgot-password");
+        header("Location: /forgot-password");
         exit;
     }
 
@@ -143,19 +143,19 @@ class AuthController
         $confirm  = $_POST['password_confirm'] ?? '';
 
         if (!$token) {
-            header("Location: /leave-system/public/login");
+            header("Location: /login");
             exit;
         }
 
         if (strlen($password) < 8) {
             $_SESSION['error'] = "Password must be at least 8 characters.";
-            header("Location: /leave-system/public/reset-password?token={$token}");
+            header("Location: /reset-password?token={$token}");
             exit;
         }
 
         if ($password !== $confirm) {
             $_SESSION['error'] = "Passwords do not match.";
-            header("Location: /leave-system/public/reset-password?token={$token}");
+            header("Location: /reset-password?token={$token}");
             exit;
         }
 
@@ -172,7 +172,7 @@ class AuthController
 
         if (!$reset) {
             $_SESSION['error'] = "This reset link is invalid or has expired.";
-            header("Location: /leave-system/public/forgot-password");
+            header("Location: /forgot-password");
             exit;
         }
 
@@ -191,12 +191,12 @@ class AuthController
         } catch (\Throwable $e) {
             $db->rollBack();
             $_SESSION['error'] = "Something went wrong. Please try again.";
-            header("Location: /leave-system/public/reset-password?token={$token}");
+            header("Location: /reset-password?token={$token}");
             exit;
         }
 
         $_SESSION['success'] = "Password updated successfully. Please sign in.";
-        header("Location: /leave-system/public/login");
+        header("Location: /login");
         exit;
     }
 
@@ -206,7 +206,7 @@ class AuthController
     public static function dashboard()
     {
         if (!isset($_SESSION['user'])) {
-            header("Location: /leave-system/public/login");
+            header("Location: /login");
             exit;
         }
 
@@ -378,14 +378,14 @@ class AuthController
     public static function logout()
     {
         session_destroy();
-        header("Location: /leave-system/public/login");
+        header("Location: /login");
         exit;
     }
 
     private static function baseUrl(): string
     {
         $s = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
-        return "{$s}://" . ($_SERVER['HTTP_HOST'] ?? 'localhost') . "/leave-system/public";
+        return "{$s}://" . ($_SERVER['HTTP_HOST'] ?? 'localhost') . "";
     }
 
     private static function resetEmailTemplate(string $name, string $url): string

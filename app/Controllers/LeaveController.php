@@ -11,7 +11,7 @@ class LeaveController
     private static function authorizeLogin()
     {
         if (!isset($_SESSION['user'])) {
-            header("Location: /leave-system/public/login");
+            header("Location: /login");
             exit;
         }
     }
@@ -20,7 +20,7 @@ class LeaveController
     {
         if (!isset($_SESSION['user']) || $_SESSION['user']['role'] !== 'admin_approver') {
             http_response_code(403);
-            header("Location: /leave-system/public/dashboard");
+            header("Location: /dashboard");
             exit;
         }
     }
@@ -276,13 +276,13 @@ class LeaveController
         // ── 1. Basic input validation ──────────────────────────────────
         if (!$leaveTypeId || !$startDate || !$endDate) {
             $_SESSION['error'] = "All fields are required.";
-            header("Location: /leave-system/public/leave");
+            header("Location: /leave");
             exit;
         }
 
         if ($endDate < $startDate) {
             $_SESSION['error'] = "End date cannot be before start date.";
-            header("Location: /leave-system/public/leave");
+            header("Location: /leave");
             exit;
         }
 
@@ -293,13 +293,13 @@ class LeaveController
             $workingDays = LeaveCalculator::calculateWorkingDays($empId, $startDate, $endDate);
         } catch (Exception $e) {
             $_SESSION['error'] = "Could not calculate working days: " . $e->getMessage();
-            header("Location: /leave-system/public/leave");
+            header("Location: /leave");
             exit;
         }
 
         if ($workingDays <= 0) {
             $_SESSION['error'] = "The selected date range contains no working days (all weekends or public holidays).";
-            header("Location: /leave-system/public/leave");
+            header("Location: /leave");
             exit;
         }
 
@@ -329,7 +329,7 @@ class LeaveController
 
             if ($available < $totalDays) {
                 $_SESSION['error'] = "Insufficient compensate leave balance. You have {$available} day(s) available.";
-                header("Location: /leave-system/public/leave");
+                header("Location: /leave");
                 exit;
             }
             $leavePeriodId = null;
@@ -352,7 +352,7 @@ class LeaveController
             if (!$grantRow || (float)$grantRow['remaining_days'] < $totalDays) {
                 $available = $grantRow ? (float)$grantRow['remaining_days'] : 0;
                 $_SESSION['error'] = "Insufficient {$leaveTypeName} balance. You have {$available} day(s) available.";
-                header("Location: /leave-system/public/leave");
+                header("Location: /leave");
                 exit;
             }
             $leavePeriodId = null;
@@ -378,7 +378,7 @@ class LeaveController
 
             if (!$periodRow) {
                 $_SESSION['error'] = "No leave period found for the selected dates. Please contact HR.";
-                header("Location: /leave-system/public/leave");
+                header("Location: /leave");
                 exit;
             }
 
@@ -387,7 +387,7 @@ class LeaveController
 
             if ($remaining < $totalDays) {
                 $_SESSION['error'] = "Insufficient balance. You have {$remaining} day(s) remaining but this request requires {$totalDays} day(s).";
-                header("Location: /leave-system/public/leave");
+                header("Location: /leave");
                 exit;
             }
         }
@@ -409,7 +409,7 @@ class LeaveController
 
         if ((int)$stmt->fetchColumn() > 0) {
             $_SESSION['error'] = "You already have a leave request that overlaps with the selected dates.";
-            header("Location: /leave-system/public/leave");
+            header("Location: /leave");
             exit;
         }
 
@@ -464,7 +464,7 @@ class LeaveController
         $_SESSION['success'] = "Leave request submitted — {$fmtStart}" .
             ($startDate !== $endDate ? " to {$fmtEnd}" : '') .
             " ({$totalDays} day" . ($totalDays != 1 ? 's' : '') . "). HR has been notified.";
-        header("Location: /leave-system/public/dashboard");
+        header("Location: /dashboard");
         exit;
     }
 
@@ -504,7 +504,7 @@ class LeaveController
             'emp' => $_SESSION['user']['id']
         ]);
 
-        header("Location: /leave-system/public/my-data");
+        header("Location: /my-data");
         exit;
     }
 
@@ -679,8 +679,8 @@ class LeaveController
         }
 
         $redirect = ($_POST['_from'] ?? '') === 'requests'
-            ? '/leave-system/public/admin/requests'
-            : '/leave-system/public/dashboard';
+            ? '/admin/requests'
+            : '/dashboard';
 
         header("Location: $redirect");
         exit;
@@ -747,8 +747,8 @@ class LeaveController
         $_SESSION['success'] = "Request rejected.";
 
         $redirect = ($_POST['_from'] ?? '') === 'requests'
-            ? '/leave-system/public/admin/requests' . (isset($_SERVER['HTTP_REFERER']) ? '?' . parse_url($_SERVER['HTTP_REFERER'], PHP_URL_QUERY) : '')
-            : '/leave-system/public/dashboard';
+            ? '/admin/requests' . (isset($_SERVER['HTTP_REFERER']) ? '?' . parse_url($_SERVER['HTTP_REFERER'], PHP_URL_QUERY) : '')
+            : '/dashboard';
 
         header("Location: $redirect");
         exit;
@@ -886,7 +886,7 @@ class LeaveController
         }
 
         $qs = $_POST['_qs'] ?? '';
-        header("Location: /leave-system/public/admin/requests" . ($qs ? '?' . $qs : ''));
+        header("Location: /admin/requests" . ($qs ? '?' . $qs : ''));
         exit;
     }
 
@@ -914,7 +914,7 @@ class LeaveController
         $name = trim($_POST['name'] ?? '');
         if (!$name) {
             $_SESSION['error'] = "Department name cannot be empty.";
-            header("Location: /leave-system/public/admin/departments");
+            header("Location: /admin/departments");
             exit;
         }
 
@@ -923,7 +923,7 @@ class LeaveController
         $check->execute(['name' => $name]);
         if ($check->fetch()) {
             $_SESSION['error'] = "Department \"{$name}\" already exists.";
-            header("Location: /leave-system/public/admin/departments");
+            header("Location: /admin/departments");
             exit;
         }
 
@@ -931,7 +931,7 @@ class LeaveController
         $stmt->execute(['name' => $name]);
         $_SESSION['success'] = "Department \"{$name}\" added.";
 
-        header("Location: /leave-system/public/admin/departments");
+        header("Location: /admin/departments");
         exit;
     }
 
@@ -943,7 +943,7 @@ class LeaveController
         $name = trim($_POST['name'] ?? '');
         if (!$name) {
             $_SESSION['error'] = "Name cannot be empty.";
-            header("Location: /leave-system/public/admin/departments");
+            header("Location: /admin/departments");
             exit;
         }
 
@@ -951,7 +951,7 @@ class LeaveController
         $stmt->execute(['name' => $name, 'id' => $id]);
         $_SESSION['success'] = "Department updated.";
 
-        header("Location: /leave-system/public/admin/departments");
+        header("Location: /admin/departments");
         exit;
     }
 
@@ -965,7 +965,7 @@ class LeaveController
         $check->execute(['id' => $id]);
         if ((int)$check->fetchColumn() > 0) {
             $_SESSION['error'] = "Cannot delete — there are employees assigned to this department.";
-            header("Location: /leave-system/public/admin/departments");
+            header("Location: /admin/departments");
             exit;
         }
 
@@ -973,7 +973,7 @@ class LeaveController
         $stmt->execute(['id' => $id]);
         $_SESSION['success'] = "Department deleted.";
 
-        header("Location: /leave-system/public/admin/departments");
+        header("Location: /admin/departments");
         exit;
     }
 
@@ -1005,7 +1005,7 @@ class LeaveController
         $name = trim($_POST['name'] ?? '');
         if (!$name) {
             $_SESSION['error'] = "Job title name cannot be empty.";
-            header("Location: /leave-system/public/admin/job-titles");
+            header("Location: /admin/job-titles");
             exit;
         }
 
@@ -1013,7 +1013,7 @@ class LeaveController
         $check->execute(['name' => $name]);
         if ($check->fetch()) {
             $_SESSION['error'] = "Job title \"{$name}\" already exists.";
-            header("Location: /leave-system/public/admin/job-titles");
+            header("Location: /admin/job-titles");
             exit;
         }
 
@@ -1021,7 +1021,7 @@ class LeaveController
         $stmt->execute(['name' => $name]);
         $_SESSION['success'] = "Job title \"{$name}\" added.";
 
-        header("Location: /leave-system/public/admin/job-titles");
+        header("Location: /admin/job-titles");
         exit;
     }
 
@@ -1033,7 +1033,7 @@ class LeaveController
         $name = trim($_POST['name'] ?? '');
         if (!$name) {
             $_SESSION['error'] = "Name cannot be empty.";
-            header("Location: /leave-system/public/admin/job-titles");
+            header("Location: /admin/job-titles");
             exit;
         }
 
@@ -1041,7 +1041,7 @@ class LeaveController
         $stmt->execute(['name' => $name, 'id' => $id]);
         $_SESSION['success'] = "Job title updated.";
 
-        header("Location: /leave-system/public/admin/job-titles");
+        header("Location: /admin/job-titles");
         exit;
     }
 
@@ -1054,7 +1054,7 @@ class LeaveController
         $check->execute(['id' => $id]);
         if ((int)$check->fetchColumn() > 0) {
             $_SESSION['error'] = "Cannot delete — there are employees with this job title.";
-            header("Location: /leave-system/public/admin/job-titles");
+            header("Location: /admin/job-titles");
             exit;
         }
 
@@ -1062,7 +1062,7 @@ class LeaveController
         $stmt->execute(['id' => $id]);
         $_SESSION['success'] = "Job title deleted.";
 
-        header("Location: /leave-system/public/admin/job-titles");
+        header("Location: /admin/job-titles");
         exit;
     }
 
@@ -1151,7 +1151,7 @@ class LeaveController
         $check->execute(['email' => $email]);
         if ($check->fetch()) {
             $_SESSION['error'] = "Email \"{$email}\" is already registered.";
-            header("Location: /leave-system/public/admin/users");
+            header("Location: /admin/users");
             exit;
         }
 
@@ -1226,7 +1226,7 @@ class LeaveController
             $_SESSION['warning'] = "Balance auto-generation failed: " . $e->getMessage();
         }
 
-        header("Location: /leave-system/public/admin/users");
+        header("Location: /admin/users");
         exit;
     }
 
@@ -1241,7 +1241,7 @@ class LeaveController
         $check->execute(['email' => $email, 'id' => $id]);
         if ($check->fetch()) {
             $_SESSION['error'] = "Email \"{$email}\" is already used by another account.";
-            header("Location: /leave-system/public/admin/users");
+            header("Location: /admin/users");
             exit;
         }
 
@@ -1287,7 +1287,7 @@ class LeaveController
         $stmt->execute($params);
 
         $_SESSION['success'] = "User updated.";
-        header("Location: /leave-system/public/admin/users");
+        header("Location: /admin/users");
         exit;
     }
 
@@ -1400,14 +1400,14 @@ class LeaveController
 
         if (!$userId || strlen($password) < 8) {
             $_SESSION['error'] = "Invalid request. Password must be at least 8 characters.";
-            header("Location: /leave-system/public/admin/users");
+            header("Location: /admin/users");
             exit;
         }
 
         // Safety: cannot reset your own password via this route
         if ($userId === (int)$_SESSION['user']['id']) {
             $_SESSION['error'] = "Use the profile page to change your own password.";
-            header("Location: /leave-system/public/admin/users");
+            header("Location: /admin/users");
             exit;
         }
 
@@ -1425,7 +1425,7 @@ class LeaveController
         $name = $nameStmt->fetchColumn() ?: 'User';
 
         $_SESSION['success'] = "Password for {$name} has been reset successfully.";
-        header("Location: /leave-system/public/admin/users");
+        header("Location: /admin/users");
         exit;
     }
 
@@ -1444,7 +1444,7 @@ class LeaveController
         $stmt->execute([$userId]);
 
         $_SESSION['success'] = "User status updated.";
-        header("Location: /leave-system/public/admin/users");
+        header("Location: /admin/users");
         exit;
     }
 
@@ -1469,19 +1469,19 @@ class LeaveController
 
         if (!$user) {
             $_SESSION['error'] = "Invalid email or password.";
-            header("Location: /leave-system/public/login");
+            header("Location: /login");
             exit;
         }
 
         if (!$user['is_active']) {
             $_SESSION['error'] = "Your account has been suspended. Please contact HR.";
-            header("Location: /leave-system/public/login");
+            header("Location: /login");
             exit;
         }
 
         if (!password_verify($password, $user['password_hash'])) {
             $_SESSION['error'] = "Invalid email or password.";
-            header("Location: /leave-system/public/login");
+            header("Location: /login");
             exit;
         }
 
@@ -1493,7 +1493,7 @@ class LeaveController
             'is_active' => $user['is_active']
         ];
 
-        header("Location: /leave-system/public/dashboard");
+        header("Location: /dashboard");
         exit;
     }
 
@@ -1503,7 +1503,7 @@ class LeaveController
         session_start();
         session_destroy();
 
-        header("Location: /leave-system/public/login");
+        header("Location: /login");
         exit;
     }
 
@@ -1513,7 +1513,7 @@ class LeaveController
         session_start();
 
         if (!isset($_SESSION['user'])) {
-            header("Location: /leave-system/public/login");
+            header("Location: /login");
             exit;
         }
 
@@ -1563,13 +1563,13 @@ class LeaveController
 
         if (!$name || !$start || !$end) {
             $_SESSION['error'] = "All fields are required.";
-            header("Location: /leave-system/public/admin/periods");
+            header("Location: /admin/periods");
             exit;
         }
 
         if ($start >= $end) {
             $_SESSION['error'] = "End date must be after start date.";
-            header("Location: /leave-system/public/admin/periods");
+            header("Location: /admin/periods");
             exit;
         }
 
@@ -1577,7 +1577,7 @@ class LeaveController
         $dup->execute(['name' => $name]);
         if ($dup->fetch()) {
             $_SESSION['error'] = "A period named \"{$name}\" already exists.";
-            header("Location: /leave-system/public/admin/periods");
+            header("Location: /admin/periods");
             exit;
         }
 
@@ -1606,7 +1606,7 @@ class LeaveController
             $_SESSION['error'] = $e->getMessage();
         }
 
-        header("Location: /leave-system/public/admin/periods");
+        header("Location: /admin/periods");
         exit;
     }
 
@@ -1619,7 +1619,7 @@ class LeaveController
         $check->execute(['id' => $id]);
         if ((int)$check->fetchColumn() > 0) {
             $_SESSION['error'] = "Cannot delete — leave balances have been generated for this period.";
-            header("Location: /leave-system/public/admin/periods");
+            header("Location: /admin/periods");
             exit;
         }
 
@@ -1627,13 +1627,13 @@ class LeaveController
         $check2->execute(['id' => $id]);
         if ((int)$check2->fetchColumn() > 0) {
             $_SESSION['error'] = "Cannot delete — leave requests exist under this period.";
-            header("Location: /leave-system/public/admin/periods");
+            header("Location: /admin/periods");
             exit;
         }
 
         $db->prepare("DELETE FROM leave_periods WHERE id = :id")->execute(['id' => $id]);
         $_SESSION['success'] = "Period deleted.";
-        header("Location: /leave-system/public/admin/periods");
+        header("Location: /admin/periods");
         exit;
     }
 
@@ -1724,7 +1724,7 @@ class LeaveController
             $_SESSION['error'] = $e->getMessage();
         }
 
-        header("Location: /leave-system/public/admin/periods");
+        header("Location: /admin/periods");
         exit;
     }
 
@@ -1763,7 +1763,7 @@ class LeaveController
 
         if (!$name) {
             $_SESSION['error'] = "Leave type name is required.";
-            header("Location: /leave-system/public/admin/leave-types");
+            header("Location: /admin/leave-types");
             exit;
         }
 
@@ -1771,7 +1771,7 @@ class LeaveController
         $dup->execute(['name' => $name]);
         if ($dup->fetch()) {
             $_SESSION['error'] = "A leave type named \"{$name}\" already exists.";
-            header("Location: /leave-system/public/admin/leave-types");
+            header("Location: /admin/leave-types");
             exit;
         }
 
@@ -1782,7 +1782,7 @@ class LeaveController
             ->execute(['name' => $name, 'days' => $days, 'source' => $source]);
 
         $_SESSION['success'] = "Leave type \"{$name}\" added.";
-        header("Location: /leave-system/public/admin/leave-types");
+        header("Location: /admin/leave-types");
         exit;
     }
 
@@ -1796,7 +1796,7 @@ class LeaveController
 
         if (!$name) {
             $_SESSION['error'] = "Leave type name is required.";
-            header("Location: /leave-system/public/admin/leave-types");
+            header("Location: /admin/leave-types");
             exit;
         }
 
@@ -1804,7 +1804,7 @@ class LeaveController
         $dup->execute(['name' => $name, 'id' => $id]);
         if ($dup->fetch()) {
             $_SESSION['error'] = "Another leave type named \"{$name}\" already exists.";
-            header("Location: /leave-system/public/admin/leave-types");
+            header("Location: /admin/leave-types");
             exit;
         }
 
@@ -1812,7 +1812,7 @@ class LeaveController
             ->execute(['name' => $name, 'days' => $days, 'id' => $id]);
 
         $_SESSION['success'] = "Leave type updated.";
-        header("Location: /leave-system/public/admin/leave-types");
+        header("Location: /admin/leave-types");
         exit;
     }
 
@@ -1825,13 +1825,13 @@ class LeaveController
         $check->execute(['id' => $id]);
         if ((int)$check->fetchColumn() > 0) {
             $_SESSION['error'] = "Cannot delete — existing leave balances use this type.";
-            header("Location: /leave-system/public/admin/leave-types");
+            header("Location: /admin/leave-types");
             exit;
         }
 
         $db->prepare("DELETE FROM leave_types WHERE id = :id")->execute(['id' => $id]);
         $_SESSION['success'] = "Leave type deleted.";
-        header("Location: /leave-system/public/admin/leave-types");
+        header("Location: /admin/leave-types");
         exit;
     }
 
@@ -2168,7 +2168,7 @@ class LeaveController
 
         if ($days === 0) {
             $_SESSION['error'] = "Adjustment cannot be 0.";
-            header("Location: /leave-system/public/admin/balances");
+            header("Location: /admin/balances");
             exit;
         }
 
@@ -2239,7 +2239,7 @@ class LeaveController
             'type'   => $_POST['type_filter']   ?? '',
             'search' => $_POST['search_filter']  ?? '',
         ]));
-        header("Location: /leave-system/public/admin/balances" . ($qs ? "?{$qs}" : ""));
+        header("Location: /admin/balances" . ($qs ? "?{$qs}" : ""));
         exit;
     }
 
@@ -2260,7 +2260,7 @@ class LeaveController
             $_SESSION['error'] = "Sync failed: " . $e->getMessage();
         }
 
-        header("Location: /leave-system/public/admin/balances");
+        header("Location: /admin/balances");
         exit;
     }
 
@@ -2388,7 +2388,7 @@ class LeaveController
 
         if (!$date || !$name) {
             $_SESSION['error'] = "Date and name are required.";
-            header("Location: /leave-system/public/admin/holidays");
+            header("Location: /admin/holidays");
             exit;
         }
 
@@ -2406,7 +2406,7 @@ class LeaveController
 
 
         $_SESSION['success'] = "Holiday \"$name\" added.";
-        header("Location: /leave-system/public/admin/holidays?year=" . date('Y', strtotime($date)));
+        header("Location: /admin/holidays?year=" . date('Y', strtotime($date)));
         exit;
     }
 
@@ -2421,7 +2421,7 @@ class LeaveController
 
         if (!$date || !$name) {
             $_SESSION['error'] = "Date and name are required.";
-            header("Location: /leave-system/public/admin/holidays");
+            header("Location: /admin/holidays");
             exit;
         }
 
@@ -2439,7 +2439,7 @@ class LeaveController
         }
 
         $_SESSION['success'] = "Holiday updated.";
-        header("Location: /leave-system/public/admin/holidays?year=" . date('Y', strtotime($date)));
+        header("Location: /admin/holidays?year=" . date('Y', strtotime($date)));
         exit;
     }
 
@@ -2458,7 +2458,7 @@ class LeaveController
         $stmt->execute(['id' => $id]);
 
         $_SESSION['success'] = "Holiday deleted.";
-        header("Location: /leave-system/public/admin/holidays?year=$year");
+        header("Location: /admin/holidays?year=$year");
         exit;
     }
 
@@ -2718,7 +2718,7 @@ class LeaveController
         }
 
         $_SESSION['success'] = "Settings saved.";
-        header("Location: /leave-system/public/admin/settings");
+        header("Location: /admin/settings");
         exit;
     }
 
@@ -2798,7 +2798,7 @@ class LeaveController
 
         if (!$employeeId || !$leaveTypeId || $days <= 0) {
             $_SESSION['error'] = "All fields are required and days must be greater than 0.";
-            header("Location: /leave-system/public/admin/leave-grants");
+            header("Location: /admin/leave-grants");
             exit;
         }
 
@@ -2809,7 +2809,7 @@ class LeaveController
 
         if (!$lt || $lt['balance_source'] !== 'admin_grant') {
             $_SESSION['error'] = "Invalid leave type for manual grant.";
-            header("Location: /leave-system/public/admin/leave-grants");
+            header("Location: /admin/leave-grants");
             exit;
         }
 
@@ -2858,7 +2858,7 @@ class LeaveController
         }
 
         $_SESSION['success'] = "Leave granted successfully.";
-        header("Location: /leave-system/public/admin/leave-grants");
+        header("Location: /admin/leave-grants");
         exit;
     }
 
@@ -2871,7 +2871,7 @@ class LeaveController
             ->execute(['id' => $id]);
 
         $_SESSION['success'] = "Grant removed.";
-        header("Location: /leave-system/public/admin/leave-grants");
+        header("Location: /admin/leave-grants");
         exit;
     }
 
@@ -2896,14 +2896,14 @@ class LeaveController
 
         if (!$workedDate || !$reason) {
             $_SESSION['error'] = "All fields are required.";
-            header("Location: /leave-system/public/comp-claim");
+            header("Location: /comp-claim");
             exit;
         }
 
         // Cannot claim future dates
         if ($workedDate > date('Y-m-d')) {
             $_SESSION['error'] = "You cannot claim a future date.";
-            header("Location: /leave-system/public/comp-claim");
+            header("Location: /comp-claim");
             exit;
         }
 
@@ -2928,7 +2928,7 @@ class LeaveController
             }
         }
 
-        header("Location: /leave-system/public/comp-claim");
+        header("Location: /comp-claim");
         exit;
     }
 
@@ -3013,7 +3013,7 @@ class LeaveController
             $_SESSION['error'] = $e->getMessage();
         }
 
-        header("Location: /leave-system/public/admin/comp-claims");
+        header("Location: /admin/comp-claims");
         exit;
     }
 
@@ -3039,7 +3039,7 @@ class LeaveController
         ]);
 
         $_SESSION['success'] = "Claim rejected.";
-        header("Location: /leave-system/public/admin/comp-claims");
+        header("Location: /admin/comp-claims");
         exit;
     }
 }

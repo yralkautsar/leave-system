@@ -7,7 +7,7 @@ class CalendarController
     public static function calendar()
     {
         if (!isset($_SESSION['user'])) {
-            header("Location: /leave-system/public/login");
+            header("Location: /login");
             exit;
         }
 

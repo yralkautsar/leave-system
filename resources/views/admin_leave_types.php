@@ -222,7 +222,7 @@
                                         Delete
                                     </button>
                                 <?php else: ?>
-                                    <form method="POST" action="/leave-system/public/admin/leave-types/delete" style="margin:0;"
+                                    <form method="POST" action="/admin/leave-types/delete" style="margin:0;"
                                         onsubmit="return confirm('Delete leave type &quot;<?= htmlspecialchars(addslashes($t['name'])) ?>&quot;?')">
                                         <input type="hidden" name="id" value="<?= $t['id'] ?>">
                                         <button class="lt-btn-del">Delete</button>
@@ -241,8 +241,8 @@
     function openLtModal(t) {
         const isEdit = !!t;
         const action = isEdit ?
-            `/leave-system/public/admin/leave-types/${t.id}/update` :
-            '/leave-system/public/admin/leave-types/store';
+            `/admin/leave-types/${t.id}/update` :
+            '/admin/leave-types/store';
         const v = k => t ? (t[k] ?? '') : '';
 
         const sourceOptions = [{

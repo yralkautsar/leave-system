@@ -471,7 +471,7 @@
                                 <?php if ($p['total_generated'] > 0): ?>
                                     <button class="per-btn-done" disabled>Generated</button>
                                 <?php else: ?>
-                                    <form method="POST" action="/leave-system/public/admin/periods/generate" style="margin:0;">
+                                    <form method="POST" action="/admin/periods/generate" style="margin:0;">
                                         <input type="hidden" name="period_id" value="<?= $p['id'] ?>">
                                         <button type="submit" class="per-btn-gen">Generate Balances</button>
                                     </form>
@@ -481,7 +481,7 @@
                                 <?php if ($p['total_generated'] > 0): ?>
                                     <button class="per-btn-dis" title="Cannot delete — balances exist">Delete</button>
                                 <?php else: ?>
-                                    <form method="POST" action="/leave-system/public/admin/periods/delete" style="margin:0;"
+                                    <form method="POST" action="/admin/periods/delete" style="margin:0;"
                                         onsubmit="return confirm('Delete period &quot;<?= htmlspecialchars(addslashes($p['name'])) ?>&quot;?')">
                                         <input type="hidden" name="id" value="<?= $p['id'] ?>">
                                         <button class="per-btn-del">Delete</button>
@@ -497,8 +497,8 @@
     </table>
 
     <div class="per-footer">
-        <a href="/leave-system/public/admin/balances" class="btn-outline" style="font-size:13px;">View All Balances →</a>
-        <a href="/leave-system/public/admin/leave-types" class="btn-outline" style="font-size:13px;">Manage Leave Types →</a>
+        <a href="/admin/balances" class="btn-outline" style="font-size:13px;">View All Balances →</a>
+        <a href="/admin/leave-types" class="btn-outline" style="font-size:13px;">Manage Leave Types →</a>
     </div>
 </div>
 
@@ -508,7 +508,7 @@
         openGM({
             title: 'New Leave Period',
             html: `
-        <form method="POST" action="/leave-system/public/admin/periods/store" style="display:contents;">
+        <form method="POST" action="/admin/periods/store" style="display:contents;">
         <div class="gm-body">
             <div class="per-info-box">
                 <b>📅 15-Month Period SOP</b>

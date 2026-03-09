@@ -80,7 +80,7 @@
                                         Delete
                                     </button>
                                 <?php else: ?>
-                                    <form method="POST" action="/leave-system/public/admin/departments/delete"
+                                    <form method="POST" action="/admin/departments/delete"
                                         style="display:inline"
                                         onsubmit="return confirm('Delete department «<?= htmlspecialchars(addslashes($d['name'])) ?>»?')">
                                         <input type="hidden" name="id" value="<?= $d['id'] ?>">
@@ -102,7 +102,7 @@
             title: 'Add Department',
             size: 'sm',
             html: `
-        <form method="POST" action="/leave-system/public/admin/departments/store">
+        <form method="POST" action="/admin/departments/store">
             <div class="gm-body">
                 <div class="gm-fg">
                     <label>Department Name <span style="color:#dc2626">*</span></label>
@@ -122,7 +122,7 @@
             title: 'Edit Department',
             size: 'sm',
             html: `
-        <form method="POST" action="/leave-system/public/admin/departments/update/${id}">
+        <form method="POST" action="/admin/departments/update/${id}">
             <div class="gm-body">
                 <div class="gm-fg">
                     <label>Department Name <span style="color:#dc2626">*</span></label>

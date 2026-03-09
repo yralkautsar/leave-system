@@ -390,7 +390,7 @@ foreach ($holidays as $h) {
                                             onclick="openHolModal(<?= htmlspecialchars(json_encode($h), ENT_QUOTES) ?>)">
                                             Edit
                                         </button>
-                                        <form method="POST" action="/leave-system/public/admin/holidays/delete"
+                                        <form method="POST" action="/admin/holidays/delete"
                                             style="margin:0;"
                                             onsubmit="return confirm('Delete &quot;<?= htmlspecialchars(addslashes($h['name'])) ?>&quot;?')">
                                             <input type="hidden" name="id" value="<?= $h['id'] ?>">
@@ -413,8 +413,8 @@ foreach ($holidays as $h) {
     function openHolModal(h) {
         const isEdit = !!h;
         const action = isEdit ?
-            `/leave-system/public/admin/holidays/update/${h.id}` :
-            '/leave-system/public/admin/holidays/store';
+            `/admin/holidays/update/${h.id}` :
+            '/admin/holidays/store';
 
         const v = k => h ? (h[k] ?? '') : '';
         const sel = (val, opt) => val === opt ? 'selected' : '';

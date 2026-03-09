@@ -23,7 +23,7 @@ function reqUrl(string $status = ''): string
         'date_to'    => $_GET['date_to']    ?? '',
     ]);
     $qs = $params ? '?' . http_build_query($params) : '';
-    return '/leave-system/public/admin/requests' . $qs;
+    return '/admin/requests' . $qs;
 }
 
 $statusLabels = [
@@ -65,7 +65,7 @@ $badgeClass = [
 
 <!-- ══ FILTER BAR ══ -->
 <div class="req-filters card">
-    <form method="GET" action="/leave-system/public/admin/requests" id="filterForm">
+    <form method="GET" action="/admin/requests" id="filterForm">
 
         <!-- preserve active status tab -->
         <?php if ($currentStatus): ?>
@@ -118,7 +118,7 @@ $badgeClass = [
                 <a href="<?= reqUrl($currentStatus) ?>" class="btn-outline">Clear</a>
             <?php endif; ?>
 
-            <a href="/leave-system/public/admin/requests/export?<?= http_build_query(array_filter([
+            <a href="/admin/requests/export?<?= http_build_query(array_filter([
                                                                     'status'     => $currentStatus,
                                                                     'search'     => $currentSearch,
                                                                     'leave_type' => $currentType,
@@ -257,7 +257,7 @@ $badgeClass = [
 
                                 <?php if ($r['status'] === 'pending'): ?>
 
-                                    <form method="POST" action="/leave-system/public/approve" style="display:inline;">
+                                    <form method="POST" action="/approve" style="display:inline;">
                                         <input type="hidden" name="id" value="<?= $r['id'] ?>">
                                         <input type="hidden" name="_from" value="requests">
                                         <button class="btn-outline-success">Approve</button>
@@ -272,7 +272,7 @@ $badgeClass = [
                                 <?php elseif ($r['status'] === 'approved'): ?>
 
                                     <form method="POST"
-                                        action="/leave-system/public/admin/requests/<?= $r['id'] ?>/revoke"
+                                        action="/admin/requests/<?= $r['id'] ?>/revoke"
                                         style="display:inline;"
                                         onsubmit="return confirm('Revoke this approved leave? Balance will be restored and request returned to pending.')">
                                         <input type="hidden" name="_qs" value="<?= htmlspecialchars(http_build_query(array_filter(['status' => $currentStatus, 'search' => $currentSearch, 'leave_type' => $currentType]))) ?>">
@@ -586,7 +586,7 @@ $badgeClass = [
         });
 
         try {
-            const res = await fetch(`/leave-system/public/admin/requests/${id}/detail`);
+            const res = await fetch(`/admin/requests/${id}/detail`);
             const data = await res.json();
             if (data.error) throw new Error(data.error);
 
@@ -712,7 +712,7 @@ $badgeClass = [
                     <div class="gm-ft">
                         ${data.status === 'pending' ? `
                         <button class="gm-btn-danger" onclick="closeGM();openRejectModal(${data.id})">Reject</button>
-                        <form method="POST" action="/leave-system/public/approve" style="margin:0;">
+                        <form method="POST" action="/approve" style="margin:0;">
                             <input type="hidden" name="id" value="${data.id}">
                             <button class="gm-btn-save" style="background:#16a34a;" onclick="closeGM()">Approve</button>
                         </form>
@@ -749,7 +749,7 @@ $badgeClass = [
                     <h3>Reject Leave Request</h3>
                     <button type="button" class="gm-x" onclick="closeGM()">✕</button>
                 </div>
-                <form method="POST" action="/leave-system/public/reject">
+                <form method="POST" action="/reject">
                     <input type="hidden" name="id" value="${id}">
                     <input type="hidden" name="_from" value="requests">
                     <div class="gm-body">

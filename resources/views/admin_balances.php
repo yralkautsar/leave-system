@@ -542,7 +542,7 @@ $sourceInfo = [
         <p class="subtext" style="margin:0;">All leave allocations — annual, compensate, event grants &amp; unlimited</p>
     </div>
     <div style="display:flex;gap:10px;align-items:center;">
-        <form method="POST" action="/leave-system/public/admin/balance-sync"
+        <form method="POST" action="/admin/balance-sync"
             onsubmit="return confirm('Recalculate remaining_days for ALL period balances?')">
             <button type="submit" class="btn-outline" style="font-size:13px;">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="vertical-align:middle;margin-right:4px;">
@@ -553,7 +553,7 @@ $sourceInfo = [
                 Sync Balances
             </button>
         </form>
-        <a href="/leave-system/public/admin/periods" class="btn-outline" style="font-size:13px;">&#8592; Back to Periods</a>
+        <a href="/admin/periods" class="btn-outline" style="font-size:13px;">&#8592; Back to Periods</a>
     </div>
 </div>
 
@@ -575,7 +575,7 @@ $sourceInfo = [
 
 <!-- Filter -->
 <div class="bal-filter">
-    <form method="GET" action="/leave-system/public/admin/balances">
+    <form method="GET" action="/admin/balances">
         <div class="bal-filter-grid">
             <div class="bal-fg">
                 <label>Employee</label>
@@ -602,14 +602,14 @@ $sourceInfo = [
             <div style="display:flex;gap:8px;align-items:center;">
                 <button type="submit" class="bal-btn-search">Search</button>
                 <?php if (!empty($_GET['search']) || !empty($_GET['type']) || !empty($_GET['period'])): ?>
-                    <a href="/leave-system/public/admin/balances" class="bal-btn-clear">Clear</a>
+                    <a href="/admin/balances" class="bal-btn-clear">Clear</a>
                 <?php endif; ?>
             </div>
         </div>
     </form>
     <?php $exportQuery = http_build_query(['search' => $_GET['search'] ?? '', 'type' => $_GET['type'] ?? '', 'period' => $_GET['period'] ?? '']); ?>
     <div style="margin-top:12px;text-align:right;">
-        <a href="/leave-system/public/admin/balances/export?<?= $exportQuery ?>" class="bal-btn-export">
+        <a href="/admin/balances/export?<?= $exportQuery ?>" class="bal-btn-export">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="vertical-align:middle;margin-right:5px;">
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
                 <polyline points="7 10 12 15 17 10" />
@@ -672,9 +672,9 @@ foreach ($balances as $b) {
                                 </svg></div>
                             <div class="empty-state-title">No leave balances found</div>
                             <?php if (!empty($_GET['search']) || !empty($_GET['type']) || !empty($_GET['period'])): ?>
-                                <div class="empty-state-desc">No balances match filters. <a href="/leave-system/public/admin/balances">Clear search</a>.</div>
+                                <div class="empty-state-desc">No balances match filters. <a href="/admin/balances">Clear search</a>.</div>
                             <?php else: ?>
-                                <div class="empty-state-desc">Generate from <a href="/leave-system/public/admin/periods">Leave Periods</a> or grant via <a href="/leave-system/public/admin/leave-grants">Leave Grants</a>.</div>
+                                <div class="empty-state-desc">Generate from <a href="/admin/periods">Leave Periods</a> or grant via <a href="/admin/leave-grants">Leave Grants</a>.</div>
                             <?php endif; ?>
                         </div>
                     </td>
@@ -771,7 +771,7 @@ foreach ($balances as $b) {
                                     <button class="bal-btn-adj" onclick='openAdjModal(<?= $bJson ?>)'>&#9998; Adjust</button>
                                     <button class="bal-btn-hist" onclick='openHistModal(<?= (int)$b['balance_id'] ?>,<?= htmlspecialchars(json_encode($b['employee_name']), ENT_QUOTES) ?>,<?= htmlspecialchars(json_encode($b['leave_type']), ENT_QUOTES) ?>)'>History</button>
                                 <?php elseif ($src === 'comp'): ?>
-                                    <a href="/leave-system/public/admin/comp-claims?search=<?= urlencode($b['employee_name']) ?>" class="bal-btn-hist" style="text-decoration:none;">View Claims</a>
+                                    <a href="/admin/comp-claims?search=<?= urlencode($b['employee_name']) ?>" class="bal-btn-hist" style="text-decoration:none;">View Claims</a>
                                 <?php else: ?>
                                     <span class="subtext" style="font-size:12px;">&#8212;</span>
                                 <?php endif; ?>
@@ -802,7 +802,7 @@ foreach ($balances as $b) {
         openGM({
             title: 'Adjust Leave Balance',
             html: `
-        <form method="POST" action="/leave-system/public/admin/balance-adjust" id="adjForm" onsubmit="return submitAdj(event)" style="display:contents;">
+        <form method="POST" action="/admin/balance-adjust" id="adjForm" onsubmit="return submitAdj(event)" style="display:contents;">
         <input type="hidden" name="balance_id" value="${b.balance_id}">
         <input type="hidden" name="mode" id="adjMode" value="${mode}">
         <input type="hidden" name="days" id="adjDays" value="">
@@ -934,7 +934,7 @@ foreach ($balances as $b) {
         <div class="gm-ft"><button type="button" class="gm-btn-cancel" onclick="closeGM()">Close</button></div>`
         });
         try {
-            const res = await fetch(`/leave-system/public/admin/balance-history?balance_id=${balanceId}`);
+            const res = await fetch(`/admin/balance-history?balance_id=${balanceId}`);
             const data = await res.json();
             let html = data.length ?
                 `<div class="bal-hist-wrap"><table class="bal-hist-table"><thead><tr><th>Change</th><th>Reason</th><th>By</th><th>Date</th></tr></thead><tbody>` +

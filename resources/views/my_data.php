@@ -543,7 +543,7 @@ $activeTab = $_GET['tab'] ?? 'profile';
                             <?php endforeach; ?>
                         </div>
                     <?php endif; ?>
-                    <a href="/leave-system/public/comp-claim"
+                    <a href="/comp-claim"
                         style="font-size:11px;color:#7c3aed;margin-top:8px;display:block;font-weight:600;">
                         View claims →
                     </a>
@@ -641,7 +641,7 @@ $activeTab = $_GET['tab'] ?? 'profile';
                                 </td>
                                 <td>
                                     <?php if ($h['status'] === 'pending'): ?>
-                                        <form method="POST" action="/leave-system/public/cancel"
+                                        <form method="POST" action="/cancel"
                                             onsubmit="return confirm('Cancel this leave request?')">
                                             <input type="hidden" name="id" value="<?= $h['id'] ?>">
                                             <button type="submit" class="btn-outline-danger" style="padding:5px 12px;font-size:12px;">Cancel</button>
@@ -656,7 +656,7 @@ $activeTab = $_GET['tab'] ?? 'profile';
         <?php else: ?>
             <div class="md-empty">
                 No leave requests yet.
-                <a href="/leave-system/public/leave" style="color:#f97316;">Submit your first leave →</a>
+                <a href="/leave" style="color:#f97316;">Submit your first leave →</a>
             </div>
         <?php endif; ?>
 

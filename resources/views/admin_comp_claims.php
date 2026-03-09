@@ -52,7 +52,7 @@ foreach ($statsRaw as $r) $ccStats[$r['status']] = (int)$r['total'];
 
     <!-- FILTER -->
     <div class="form-wrapper">
-        <form method="GET" action="/leave-system/public/admin/comp-claims">
+        <form method="GET" action="/admin/comp-claims">
             <div class="form-grid">
 
                 <div class="form-group">
@@ -152,7 +152,7 @@ foreach ($statsRaw as $r) $ccStats[$r['status']] = (int)$r['total'];
                                 <?php if ($c['status'] === 'pending'): ?>
 
                                     <form method="POST"
-                                        action="/leave-system/public/admin/comp-claims/approve"
+                                        action="/admin/comp-claims/approve"
                                         style="display:inline;">
                                         <input type="hidden" name="id" value="<?= $c['id'] ?>">
                                         <button class="btn-outline-success">Approve</button>
@@ -186,7 +186,7 @@ foreach ($statsRaw as $r) $ccStats[$r['status']] = (int)$r['total'];
         openGM(`
         <h3 style="margin:0 0 4px;">Reject Claim</h3>
         <p style="margin:0 0 20px; color:#64748b; font-size:13px;">${empName}</p>
-        <form method="POST" action="/leave-system/public/admin/comp-claims/reject">
+        <form method="POST" action="/admin/comp-claims/reject">
             <input type="hidden" name="id" value="${claimId}">
             <div class="form-group">
                 <label>Rejection Reason (optional)</label>

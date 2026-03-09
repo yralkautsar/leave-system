@@ -36,7 +36,7 @@
                     </td>
                     <td>
                         <?php if ($h['status'] === 'pending'): ?>
-                            <form method="POST" action="/leave-system/public/cancel">
+                            <form method="POST" action="/cancel">
                                 <input type="hidden" name="id" value="<?= $h['id'] ?>">
                                 <button class="btn btn-danger">Cancel</button>
                             </form>

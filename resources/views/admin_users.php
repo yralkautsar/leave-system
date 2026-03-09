@@ -386,7 +386,7 @@ $roleLabel   = ['employee' => 'Employee', 'admin_approver' => 'Admin'];
         <p class="subtext" style="margin:0;">Manage employee accounts, roles, and reporting lines</p>
     </div>
     <div style="display:flex;gap:10px;align-items:center;">
-        <a href="/leave-system/public/admin/users/export?<?= http_build_query(array_filter([
+        <a href="/admin/users/export?<?= http_build_query(array_filter([
                                                                 'search' => $_GET['search'] ?? '',
                                                                 'role'   => $_GET['role']   ?? '',
                                                                 'dept'   => $_GET['dept']   ?? '',
@@ -419,7 +419,7 @@ $roleLabel   = ['employee' => 'Employee', 'admin_approver' => 'Admin'];
 
 <!-- SEARCH / FILTER -->
 <div class="u-filter-bar">
-    <form method="GET" action="/leave-system/public/admin/users">
+    <form method="GET" action="/admin/users">
         <div class="u-filter-grid">
             <div class="u-fg">
                 <input type="text" name="search"
@@ -453,7 +453,7 @@ $roleLabel   = ['employee' => 'Employee', 'admin_approver' => 'Admin'];
             <div style="display:flex;gap:8px;align-items:center;">
                 <button type="submit" class="u-btn-search">Search</button>
                 <?php if (!empty($_GET['search']) || !empty($_GET['role']) || !empty($_GET['dept']) || !empty($_GET['status'])): ?>
-                    <a href="/leave-system/public/admin/users" class="u-btn-clear">Clear</a>
+                    <a href="/admin/users" class="u-btn-clear">Clear</a>
                 <?php endif; ?>
             </div>
         </div>
@@ -556,7 +556,7 @@ $roleLabel   = ['employee' => 'Employee', 'admin_approver' => 'Admin'];
                                     onclick='openResetPwModal(<?= (int)$u['id'] ?>, <?= htmlspecialchars(json_encode($u['name']), ENT_QUOTES) ?>)'>
                                     Reset PW
                                 </button>
-                                <form method="POST" action="/leave-system/public/admin/users/toggle-status" style="margin:0;">
+                                <form method="POST" action="/admin/users/toggle-status" style="margin:0;">
                                     <input type="hidden" name="user_id" value="<?= $u['id'] ?>">
                                     <?php if ($u['is_active']): ?>
                                         <button class="u-btn-suspend"
@@ -607,8 +607,8 @@ $roleLabel   = ['employee' => 'Employee', 'admin_approver' => 'Admin'];
         const isEdit = !!user;
         const u = user || {};
         const action = isEdit ?
-            `/leave-system/public/admin/users/update/${u.id}` :
-            '/leave-system/public/admin/users/store';
+            `/admin/users/update/${u.id}` :
+            '/admin/users/store';
 
         const v = k => u[k] ?? '';
 
@@ -715,7 +715,7 @@ $roleLabel   = ['employee' => 'Employee', 'admin_approver' => 'Admin'];
             title: 'Reset Password',
             size: 'sm',
             html: `
-        <form method="POST" action="/leave-system/public/admin/users/reset-password"
+        <form method="POST" action="/admin/users/reset-password"
               style="display:contents;"
               onsubmit="return validateResetPw(this)">
         <input type="hidden" name="user_id" value="${userId}">

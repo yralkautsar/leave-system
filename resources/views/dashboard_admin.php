@@ -15,7 +15,7 @@ $today     = date('l, d F Y');
         <h2 class="dash-greeting-title"><?= $greeting ?>, <?= htmlspecialchars($adminName) ?> </h2>
         <p class="subtext"><?= $today ?></p>
     </div>
-    <a href="/leave-system/public/admin/requests" class="btn-outline" style="flex-shrink:0;font-size:13px;">
+    <a href="/admin/requests" class="btn-outline" style="flex-shrink:0;font-size:13px;">
         View All Requests
     </a>
 </div>
@@ -25,7 +25,7 @@ $today     = date('l, d F Y');
 ══════════════════════════════════════════ -->
 <div class="dash-stats">
 
-    <a href="/leave-system/public/admin/requests?status=pending" class="dstat dstat-orange" style="text-decoration:none;">
+    <a href="/admin/requests?status=pending" class="dstat dstat-orange" style="text-decoration:none;">
         <div class="dstat-icon">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <circle cx="12" cy="12" r="10" />
@@ -39,7 +39,7 @@ $today     = date('l, d F Y');
         </div>
     </a>
 
-    <a href="/leave-system/public/admin/requests?status=approved" class="dstat dstat-green" style="text-decoration:none;">
+    <a href="/admin/requests?status=approved" class="dstat dstat-green" style="text-decoration:none;">
         <div class="dstat-icon">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <polyline points="20 6 9 17 4 12" />
@@ -51,7 +51,7 @@ $today     = date('l, d F Y');
         </div>
     </a>
 
-    <a href="/leave-system/public/admin/requests?status=rejected" class="dstat dstat-red" style="text-decoration:none;">
+    <a href="/admin/requests?status=rejected" class="dstat dstat-red" style="text-decoration:none;">
         <div class="dstat-icon">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <line x1="18" y1="6" x2="6" y2="18" />
@@ -79,7 +79,7 @@ $today     = date('l, d F Y');
         </div>
     </div>
 
-    <a href="/leave-system/public/admin/users" class="dstat dstat-slate" style="text-decoration:none;">
+    <a href="/admin/users" class="dstat dstat-slate" style="text-decoration:none;">
         <div class="dstat-icon">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <circle cx="12" cy="8" r="5" />
@@ -92,7 +92,7 @@ $today     = date('l, d F Y');
         </div>
     </a>
 
-    <a href="/leave-system/public/admin/comp-claims" class="dstat dstat-purple" style="text-decoration:none;">
+    <a href="/admin/comp-claims" class="dstat dstat-purple" style="text-decoration:none;">
         <div class="dstat-icon">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
@@ -132,12 +132,12 @@ if ($deptFilter) {
         Showing:
     </div>
     <div class="dash-dept-pills">
-        <a href="/leave-system/public/dashboard"
+        <a href="/dashboard"
             class="dash-dept-pill <?= !$deptFilter ? 'active' : '' ?>">
             All Departments
         </a>
         <?php foreach ($departments as $d): ?>
-            <a href="/leave-system/public/dashboard?dept=<?= $d['id'] ?>"
+            <a href="/dashboard?dept=<?= $d['id'] ?>"
                 class="dash-dept-pill <?= $deptFilter == $d['id'] ? 'active' : '' ?>">
                 <?= htmlspecialchars($d['name']) ?>
             </a>
@@ -166,7 +166,7 @@ if ($deptFilter) {
                     </p>
                 </div>
                 <?php if ((int)$stats['pending'] > 15): ?>
-                    <a href="/leave-system/public/admin/requests?status=pending" class="dash-see-all">
+                    <a href="/admin/requests?status=pending" class="dash-see-all">
                         +<?= (int)$stats['pending'] - 15 ?> more →
                     </a>
                 <?php endif; ?>
@@ -213,7 +213,7 @@ if ($deptFilter) {
                             <div class="dash-req-age"><?= _timeDiff($r['created_at']) ?></div>
 
                             <div class="dash-req-actions">
-                                <form method="POST" action="/leave-system/public/approve" style="display:inline;">
+                                <form method="POST" action="/approve" style="display:inline;">
                                     <input type="hidden" name="id" value="<?= $r['id'] ?>">
                                     <button class="btn-outline-success" style="font-size:12px;padding:5px 11px;">Approve</button>
                                 </form>
@@ -248,7 +248,7 @@ if ($deptFilter) {
                         <?php endif; ?>
                     </p>
                 </div>
-                <a href="/leave-system/public/calendar" class="dash-see-all">Calendar →</a>
+                <a href="/calendar" class="dash-see-all">Calendar →</a>
             </div>
 
             <?php if (empty($onLeaveTodayList)): ?>
@@ -731,7 +731,7 @@ function _timeDiff(string $dt): string
                     <h3>Reject Leave Request</h3>
                     <button type="button" class="gm-x" onclick="closeGM()">✕</button>
                 </div>
-                <form method="POST" action="/leave-system/public/reject">
+                <form method="POST" action="/reject">
                     <input type="hidden" name="id" value="${id}">
                     <div class="gm-body">
                         <p style="margin:0 0 14px;font-size:13.5px;color:#374151;">

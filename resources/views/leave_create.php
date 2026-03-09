@@ -730,7 +730,7 @@ $next = date('Y-m', strtotime('+1 month', strtotime($monthStart)));
                     </svg>
                 </div>
                 <p>Click any date on the<br>calendar to start your<br>leave request.</p>
-                <a href="/leave-system/public/calendar" target="_blank" class="lc-cal-link">
+                <a href="/calendar" target="_blank" class="lc-cal-link">
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                         <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
                         <polyline points="15 3 21 3 21 9" />
@@ -776,7 +776,7 @@ $next = date('Y-m', strtotime('+1 month', strtotime($monthStart)));
                         <div id="panelTeamList" style="font-size:12.5px;color:#374151;"></div>
                     </div>
 
-                    <form method="POST" action="/leave-system/public/leave-store" id="leaveForm">
+                    <form method="POST" action="/leave-store" id="leaveForm">
 
                         <!-- Leave type -->
                         <div class="lc-fg">

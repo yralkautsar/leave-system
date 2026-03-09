@@ -20,7 +20,7 @@
 
     <!-- GRANT FORM -->
     <div class="form-wrapper">
-        <form method="POST" action="/leave-system/public/admin/leave-grants/store">
+        <form method="POST" action="/admin/leave-grants/store">
 
             <div class="form-grid">
 
@@ -119,7 +119,7 @@
                             <td>
                                 <?php if ((float)$g['used_days'] == 0): ?>
                                     <form method="POST"
-                                        action="/leave-system/public/admin/leave-grants/revoke"
+                                        action="/admin/leave-grants/revoke"
                                         onsubmit="return confirm('Remove this grant?')">
                                         <input type="hidden" name="id" value="<?= $g['id'] ?>">
                                         <button class="btn-outline-danger">Revoke</button>
