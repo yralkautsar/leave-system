@@ -1138,27 +1138,29 @@ class LeaveController
 
         $stmt = $db->prepare("
             INSERT INTO users
-            (name, email, password_hash, role,
+            (name, nickname, religion, email, password_hash, role,
              department_id, job_title_id,
              hod_id, gm_id,
              join_date, is_active, created_at)
             VALUES
-            (:name, :email, :pass, :role,
+            (:name, :nickname, :religion, :email, :pass, :role,
              :dept, :job,
              :hod, :gm,
              :join, 1, NOW())
         ");
 
         $stmt->execute([
-            'name'  => trim($_POST['name']),
-            'email' => $email,
-            'pass'  => password_hash($_POST['password'], PASSWORD_DEFAULT),
-            'role'  => $_POST['role'],
-            'dept'  => $_POST['department_id'] ?: null,
-            'job'   => $_POST['job_title_id']  ?: null,
-            'hod'   => $_POST['hod_id']        ?: null,
-            'gm'    => $_POST['gm_id']         ?: null,
-            'join'  => $_POST['join_date'],
+            'name'     => trim($_POST['name']),
+            'nickname' => trim($_POST['nickname'] ?? '') ?: null,
+            'religion' => trim($_POST['religion']  ?? '') ?: null,
+            'email'    => $email,
+            'pass'     => password_hash($_POST['password'], PASSWORD_DEFAULT),
+            'role'     => $_POST['role'],
+            'dept'     => $_POST['department_id'] ?: null,
+            'job'      => $_POST['job_title_id']  ?: null,
+            'hod'      => $_POST['hod_id']        ?: null,
+            'gm'       => $_POST['gm_id']         ?: null,
+            'join'     => $_POST['join_date'],
         ]);
 
         $newUserId  = (int)$db->lastInsertId();
@@ -1227,6 +1229,8 @@ class LeaveController
         $sql = "
             UPDATE users SET
                 name             = :name,
+                nickname         = :nickname,
+                religion         = :religion,
                 email            = :email,
                 role             = :role,
                 department_id    = :dept,
@@ -1239,6 +1243,8 @@ class LeaveController
 
         $params = [
             'name'     => trim($_POST['name']),
+            'nickname' => trim($_POST['nickname'] ?? '') ?: null,
+            'religion' => trim($_POST['religion']  ?? '') ?: null,
             'email'    => $email,
             'role'     => $_POST['role'],
             'dept'     => $_POST['department_id']    ?: null,
@@ -1362,9 +1368,10 @@ class LeaveController
         }
 
         $_SESSION['user'] = [
-            'id' => $user['id'],
-            'name' => $user['name'],
-            'role' => $user['role'],
+            'id'        => $user['id'],
+            'name'      => $user['name'],
+            'nickname'  => $user['nickname'] ?? null,
+            'role'      => $user['role'],
             'is_active' => $user['is_active']
         ];
 

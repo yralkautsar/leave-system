@@ -500,6 +500,11 @@ $roleLabel   = ['employee' => 'Employee', 'admin_approver' => 'Admin'];
                                 </div>
                                 <div>
                                     <div class="u-name"><?= htmlspecialchars($u['name']) ?></div>
+                                    <?php if (!empty($u['nickname'])): ?>
+                                        <div class="u-email" style="color:#f97316;">
+                                            "<?= htmlspecialchars($u['nickname']) ?>"
+                                        </div>
+                                    <?php endif; ?>
                                     <div class="u-email"><?= htmlspecialchars($u['email']) ?></div>
                                 </div>
                             </div>
@@ -609,6 +614,19 @@ $roleLabel   = ['employee' => 'Employee', 'admin_approver' => 'Admin'];
                 <div class="u-fg">
                     <label>Full Name <span class="u-req">*</span></label>
                     <input type="text" name="name" value="${escH(v('name'))}" required>
+                </div>
+                <div class="u-fg">
+                    <label>Nickname <span class="u-opt">(what to call them)</span></label>
+                    <input type="text" name="nickname" value="${escH(v('nickname'))}" placeholder="e.g. Resti, Koko, Budi">
+                </div>
+                <div class="u-fg">
+                    <label>Religion <span class="u-opt">(optional)</span></label>
+                    <select name="religion">
+                        <option value="">— Select —</option>
+                        ${['Islam','Kristen','Katolik','Hindu','Buddha','Konghucu','Lainnya']
+                            .map(r => `<option value="${r}" ${v('religion') === r ? 'selected' : ''}>${r}</option>`)
+                            .join('')}
+                    </select>
                 </div>
                 <div class="u-fg">
                     <label>Email <span class="u-req">*</span></label>
