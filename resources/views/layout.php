@@ -229,9 +229,9 @@ function isActive(string $path, string $match, bool $exact = false): string
 
         </aside>
 
-        <!-- ════════════════════════════════════════
-     MAIN
-════════════════════════════════════════ -->
+        <!-- Mobile overlay -->
+        <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+        ════════════════════════════════════════ -->
         <main class="main">
 
             <!-- Topbar -->
@@ -254,7 +254,15 @@ function isActive(string $path, string $match, bool $exact = false): string
             $pageTitle = $pageTitles[$currentPath] ?? 'Leave Management';
             ?>
             <div class="topbar">
+                <?php if (!$isAdmin): ?>
+                    <button class="topbar-hamburger" id="hamburgerBtn" onclick="toggleSidebar()" aria-label="Menu">
+                        <span></span><span></span><span></span>
+                    </button>
+                <?php else: ?>
+                    <div></div>
+                <?php endif; ?>
                 <span class="topbar-page"><?= htmlspecialchars($pageTitle) ?></span>
+                <div></div>
             </div>
 
             <!-- Content -->
@@ -640,6 +648,126 @@ function isActive(string $path, string $match, bool $exact = false): string
         .flash-close:hover {
             opacity: 1;
         }
+
+        /* ════════════════════════════════════════
+   MOBILE — Employee only (≤768px)
+════════════════════════════════════════ */
+        @media (max-width: 768px) {
+
+            /* Sidebar becomes off-canvas drawer */
+            .sidebar {
+                position: fixed;
+                top: 0;
+                left: 0;
+                height: 100vh;
+                z-index: 1000;
+                transform: translateX(-100%);
+                transition: transform .25s ease;
+                box-shadow: 4px 0 24px rgba(0, 0, 0, 0.25);
+            }
+
+            .sidebar.open {
+                transform: translateX(0);
+            }
+
+            /* Dark overlay behind sidebar */
+            .sidebar-overlay {
+                display: none;
+                position: fixed;
+                inset: 0;
+                background: rgba(0, 0, 0, 0.45);
+                z-index: 999;
+            }
+
+            .sidebar-overlay.show {
+                display: block;
+            }
+
+            /* Main takes full width */
+            .main {
+                width: 100%;
+                min-width: 0;
+            }
+
+            /* Topbar — 3-column: hamburger | title | empty */
+            .topbar {
+                display: grid;
+                grid-template-columns: 44px 1fr 44px;
+                align-items: center;
+                padding: 0 12px;
+                height: 56px;
+            }
+
+            .topbar-page {
+                text-align: center;
+                font-size: 14px;
+            }
+
+            /* Hamburger button */
+            .topbar-hamburger {
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                gap: 5px;
+                width: 36px;
+                height: 36px;
+                background: none;
+                border: none;
+                cursor: pointer;
+                padding: 4px;
+                border-radius: 8px;
+                transition: background .15s;
+            }
+
+            .topbar-hamburger:hover {
+                background: #f1f5f9;
+            }
+
+            .topbar-hamburger span {
+                display: block;
+                height: 2px;
+                background: #374151;
+                border-radius: 2px;
+                transition: all .2s ease;
+            }
+
+            /* Content padding adjustment */
+            .content {
+                padding: 16px;
+            }
+
+            /* Tables — horizontal scroll on mobile */
+            .table-responsive {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                border-radius: 8px;
+            }
+
+            /* Cards stack nicely */
+            .stats-grid {
+                grid-template-columns: 1fr 1fr;
+                gap: 10px;
+            }
+
+            /* Modal full width on mobile */
+            .modal-content {
+                width: calc(100vw - 32px);
+                max-width: 100%;
+                max-height: 90vh;
+                overflow-y: auto;
+            }
+        }
+
+        /* Hide hamburger on desktop */
+        @media (min-width: 769px) {
+            .topbar-hamburger {
+                display: none;
+            }
+
+            .sidebar-overlay {
+                display: none !important;
+            }
+        }
     </style>
 
     <!-- ════════════════════════════════════════
@@ -692,6 +820,58 @@ function isActive(string $path, string $match, bool $exact = false): string
             return String(s ?? '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
         };
     </script>
+
+    <?php if (!$isAdmin): ?>
+        <script>
+            function toggleSidebar() {
+                const sidebar = document.getElementById('sidebar');
+                const overlay = document.getElementById('sidebarOverlay');
+                const isOpen = sidebar.classList.contains('open');
+
+                if (isOpen) {
+                    sidebar.classList.remove('open');
+                    overlay.classList.remove('show');
+                    document.body.style.overflow = '';
+                } else {
+                    sidebar.classList.add('open');
+                    overlay.classList.add('show');
+                    document.body.style.overflow = 'hidden'; // prevent background scroll
+                }
+            }
+
+            // Close sidebar when a nav link is tapped on mobile
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.addEventListener('click', function() {
+                    if (window.innerWidth <= 768) {
+                        const sidebar = document.getElementById('sidebar');
+                        const overlay = document.getElementById('sidebarOverlay');
+                        sidebar.classList.remove('open');
+                        overlay.classList.remove('show');
+                        document.body.style.overflow = '';
+                    }
+                });
+            });
+
+            // Close on swipe left
+            (function() {
+                let startX = 0;
+                const sidebar = document.getElementById('sidebar');
+
+                sidebar.addEventListener('touchstart', e => {
+                    startX = e.touches[0].clientX;
+                }, {
+                    passive: true
+                });
+
+                sidebar.addEventListener('touchend', e => {
+                    const diff = startX - e.changedTouches[0].clientX;
+                    if (diff > 60) toggleSidebar(); // swipe left to close
+                }, {
+                    passive: true
+                });
+            })();
+        </script>
+    <?php endif; ?>
 </body>
 
 </html>

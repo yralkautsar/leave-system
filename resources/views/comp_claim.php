@@ -100,85 +100,87 @@ $claims = $histStmt->fetchAll(PDO::FETCH_ASSOC);
     </div>
 
     <div class="table-section">
-        <table>
-            <thead>
-                <tr>
-                    <th>Date Worked</th>
-                    <th>Reason</th>
-                    <th>Submitted</th>
-                    <th>Status</th>
-                    <th>Expires</th>
-                    <th>Remaining</th>
-                </tr>
-            </thead>
-            <tbody>
-
-                <?php if (empty($claims)): ?>
+        <div class="table-responsive">
+            <table>
+                <thead>
                     <tr>
-                        <td colspan="6" class="empty-row">No claims submitted yet.</td>
+                        <th>Date Worked</th>
+                        <th>Reason</th>
+                        <th>Submitted</th>
+                        <th>Status</th>
+                        <th>Expires</th>
+                        <th>Remaining</th>
                     </tr>
-                <?php else: ?>
-                    <?php foreach ($claims as $c): ?>
+                </thead>
+                <tbody>
+
+                    <?php if (empty($claims)): ?>
                         <tr>
-                            <td><?= htmlspecialchars($c['worked_date']) ?></td>
-                            <td><?= htmlspecialchars($c['reason']) ?></td>
-                            <td><?= date('d M Y', strtotime($c['created_at'])) ?></td>
+                            <td colspan="6" class="empty-row">No claims submitted yet.</td>
+                        </tr>
+                    <?php else: ?>
+                        <?php foreach ($claims as $c): ?>
+                            <tr>
+                                <td><?= htmlspecialchars($c['worked_date']) ?></td>
+                                <td><?= htmlspecialchars($c['reason']) ?></td>
+                                <td><?= date('d M Y', strtotime($c['created_at'])) ?></td>
 
-                            <td>
-                                <?php if ($c['status'] === 'pending'): ?>
-                                    <span class="badge cc-badge-pending">Pending</span>
-                                <?php elseif ($c['status'] === 'approved'): ?>
-                                    <span class="badge cc-badge-approved">Approved</span>
-                                <?php else: ?>
-                                    <span class="badge cc-badge-rejected"
-                                        title="<?= htmlspecialchars($c['rejection_reason'] ?? '') ?>">
-                                        Rejected
-                                    </span>
-                                <?php endif; ?>
-                            </td>
-
-                            <td>
-                                <?php if ($c['status'] === 'approved' && $c['expires_at']): ?>
-                                    <?php
-                                    $daysLeft = (int)ceil((strtotime($c['expires_at']) - time()) / 86400);
-                                    $expClass = $daysLeft <= 30 ? 'cc-exp-warn' : '';
-                                    ?>
-                                    <span class="<?= $expClass ?>">
-                                        <?= date('d M Y', strtotime($c['expires_at'])) ?>
-                                        <?php if ($daysLeft <= 30 && $daysLeft > 0): ?>
-                                            <span class="cc-exp-tag"><?= $daysLeft ?>d left</span>
-                                        <?php elseif ($daysLeft <= 0): ?>
-                                            <span class="cc-exp-tag cc-expired">Expired</span>
-                                        <?php endif; ?>
-                                    </span>
-                                <?php else: ?>
-                                    <span class="subtext">—</span>
-                                <?php endif; ?>
-                            </td>
-
-                            <td>
-                                <?php if ($c['status'] === 'approved'): ?>
-                                    <?php
-                                    $expired = $c['expires_at'] && $c['expires_at'] < date('Y-m-d');
-                                    ?>
-                                    <?php if ($expired): ?>
-                                        <span class="subtext">0 days</span>
+                                <td>
+                                    <?php if ($c['status'] === 'pending'): ?>
+                                        <span class="badge cc-badge-pending">Pending</span>
+                                    <?php elseif ($c['status'] === 'approved'): ?>
+                                        <span class="badge cc-badge-approved">Approved</span>
                                     <?php else: ?>
-                                        <span class="badge cc-badge-days">
-                                            <?= number_format((float)$c['days_remaining'], 1) ?> days
+                                        <span class="badge cc-badge-rejected"
+                                            title="<?= htmlspecialchars($c['rejection_reason'] ?? '') ?>">
+                                            Rejected
                                         </span>
                                     <?php endif; ?>
-                                <?php else: ?>
-                                    <span class="subtext">—</span>
-                                <?php endif; ?>
-                            </td>
+                                </td>
 
-                        </tr>
-                    <?php endforeach; ?>
-                <?php endif; ?>
+                                <td>
+                                    <?php if ($c['status'] === 'approved' && $c['expires_at']): ?>
+                                        <?php
+                                        $daysLeft = (int)ceil((strtotime($c['expires_at']) - time()) / 86400);
+                                        $expClass = $daysLeft <= 30 ? 'cc-exp-warn' : '';
+                                        ?>
+                                        <span class="<?= $expClass ?>">
+                                            <?= date('d M Y', strtotime($c['expires_at'])) ?>
+                                            <?php if ($daysLeft <= 30 && $daysLeft > 0): ?>
+                                                <span class="cc-exp-tag"><?= $daysLeft ?>d left</span>
+                                            <?php elseif ($daysLeft <= 0): ?>
+                                                <span class="cc-exp-tag cc-expired">Expired</span>
+                                            <?php endif; ?>
+                                        </span>
+                                    <?php else: ?>
+                                        <span class="subtext">—</span>
+                                    <?php endif; ?>
+                                </td>
 
-            </tbody>
-        </table>
+                                <td>
+                                    <?php if ($c['status'] === 'approved'): ?>
+                                        <?php
+                                        $expired = $c['expires_at'] && $c['expires_at'] < date('Y-m-d');
+                                        ?>
+                                        <?php if ($expired): ?>
+                                            <span class="subtext">0 days</span>
+                                        <?php else: ?>
+                                            <span class="badge cc-badge-days">
+                                                <?= number_format((float)$c['days_remaining'], 1) ?> days
+                                            </span>
+                                        <?php endif; ?>
+                                    <?php else: ?>
+                                        <span class="subtext">—</span>
+                                    <?php endif; ?>
+                                </td>
+
+                            </tr>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+
+                </tbody>
+            </table>
+        </div><!-- .table-responsive -->
     </div>
 
 </div>

@@ -429,6 +429,33 @@
 
     /* Cancel button in recent table */
     /* ed-cancel-btn removed — uses global .btn-outline-danger */
+
+    @media (max-width: 768px) {
+        .ed-balances {
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .ed-summary-grid {
+            grid-template-columns: 1fr;
+            gap: 10px;
+        }
+
+        .ed-hero {
+            padding: 18px 16px;
+            border-radius: 12px;
+        }
+
+        .ed-hero-title {
+            font-size: 20px;
+        }
+
+        .ed-recent-table {
+            display: block;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+    }
 </style>
 
 <?php
@@ -436,7 +463,9 @@ $balances      = $balances      ?? [];
 $stats         = $stats         ?? ['pending' => 0, 'approved' => 0, 'rejected' => 0];
 $history       = $history       ?? [];
 $notifications = $notifications ?? [];
-$userName = explode(' ', $_SESSION['user']['name'])[0];
+$userName = !empty($_SESSION['user']['nickname'])
+    ? $_SESSION['user']['nickname']
+    : explode(' ', $_SESSION['user']['name'])[0];
 
 // Filter out dismissed notifications (via sessionStorage — handled in JS)
 ?>

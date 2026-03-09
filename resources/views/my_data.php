@@ -600,57 +600,59 @@ $activeTab = $_GET['tab'] ?? 'profile';
         </div>
 
         <?php if (!empty($history)): ?>
-            <table class="md-hist-table" id="histTable">
-                <thead>
-                    <tr>
-                        <th>Leave Type</th>
-                        <th>Start</th>
-                        <th>End</th>
-                        <th>Days</th>
-                        <th>Period</th>
-                        <th>Status</th>
-                        <th></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php foreach ($history as $h): ?>
-                        <tr data-status="<?= $h['status'] ?>"
-                            data-type="<?= htmlspecialchars($h['leave_type']) ?>"
-                            data-period="<?= htmlspecialchars($h['period_name'] ?? '') ?>">
-                            <td><?= htmlspecialchars($h['leave_type']) ?></td>
-                            <td><?= date('d M Y', strtotime($h['start_date'])) ?></td>
-                            <td><?= date('d M Y', strtotime($h['end_date'])) ?></td>
-                            <td>
-                                <?= (float)$h['total_days'] ?>
-                                <?php if (($h['duration_type'] ?? '') === 'half_am'): ?>
-                                    <span class="dur-tag">AM</span>
-                                <?php elseif (($h['duration_type'] ?? '') === 'half_pm'): ?>
-                                    <span class="dur-tag">PM</span>
-                                <?php endif; ?>
-                            </td>
-                            <td style="font-size:12.5px;color:#94a3b8;"><?= htmlspecialchars($h['period_name'] ?? '—') ?></td>
-                            <td>
-                                <span class="bd bd-<?= $h['status'] ?>"><?= ucfirst($h['status']) ?></span>
-                                <?php if (!empty($h['rejection_reason'])): ?>
-                                    <br>
-                                    <span class="md-rejection-note">
-                                        "<?= htmlspecialchars($h['rejection_reason']) ?>"
-                                    </span>
-                                <?php endif; ?>
-                            </td>
-                            <td>
-                                <?php if ($h['status'] === 'pending'): ?>
-                                    <form method="POST" action="/leave-system/public/cancel"
-                                        onsubmit="return confirm('Cancel this leave request?')">
-                                        <input type="hidden" name="id" value="<?= $h['id'] ?>">
-                                        <button type="submit" class="btn-outline-danger" style="padding:5px 12px;font-size:12px;">Cancel</button>
-                                    </form>
-                                <?php endif; ?>
-                            </td>
+            <div class="table-responsive">
+                <table class="md-hist-table" id="histTable">
+                    <thead>
+                        <tr>
+                            <th>Leave Type</th>
+                            <th>Start</th>
+                            <th>End</th>
+                            <th>Days</th>
+                            <th>Period</th>
+                            <th>Status</th>
+                            <th></th>
                         </tr>
-                    <?php endforeach; ?>
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($history as $h): ?>
+                            <tr data-status="<?= $h['status'] ?>"
+                                data-type="<?= htmlspecialchars($h['leave_type']) ?>"
+                                data-period="<?= htmlspecialchars($h['period_name'] ?? '') ?>">
+                                <td><?= htmlspecialchars($h['leave_type']) ?></td>
+                                <td><?= date('d M Y', strtotime($h['start_date'])) ?></td>
+                                <td><?= date('d M Y', strtotime($h['end_date'])) ?></td>
+                                <td>
+                                    <?= (float)$h['total_days'] ?>
+                                    <?php if (($h['duration_type'] ?? '') === 'half_am'): ?>
+                                        <span class="dur-tag">AM</span>
+                                    <?php elseif (($h['duration_type'] ?? '') === 'half_pm'): ?>
+                                        <span class="dur-tag">PM</span>
+                                    <?php endif; ?>
+                                </td>
+                                <td style="font-size:12.5px;color:#94a3b8;"><?= htmlspecialchars($h['period_name'] ?? '—') ?></td>
+                                <td>
+                                    <span class="bd bd-<?= $h['status'] ?>"><?= ucfirst($h['status']) ?></span>
+                                    <?php if (!empty($h['rejection_reason'])): ?>
+                                        <br>
+                                        <span class="md-rejection-note">
+                                            "<?= htmlspecialchars($h['rejection_reason']) ?>"
+                                        </span>
+                                    <?php endif; ?>
+                                </td>
+                                <td>
+                                    <?php if ($h['status'] === 'pending'): ?>
+                                        <form method="POST" action="/leave-system/public/cancel"
+                                            onsubmit="return confirm('Cancel this leave request?')">
+                                            <input type="hidden" name="id" value="<?= $h['id'] ?>">
+                                            <button type="submit" class="btn-outline-danger" style="padding:5px 12px;font-size:12px;">Cancel</button>
+                                        </form>
+                                    <?php endif; ?>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div><!-- .table-responsive -->
         <?php else: ?>
             <div class="md-empty">
                 No leave requests yet.
