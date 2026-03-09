@@ -338,6 +338,25 @@ if (
 }
 
 /* ==========================================================
+   ADMIN – LEAVE GRANTS
+========================================================== */
+
+if ($uri === '/leave-system/public/admin/leave-grants') {
+    LeaveController::leaveGrants();
+    exit;
+}
+
+if ($uri === '/leave-system/public/admin/leave-grants/store' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    LeaveController::storeLeaveGrant();
+    exit;
+}
+
+if ($uri === '/leave-system/public/admin/leave-grants/revoke' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    LeaveController::revokeLeaveGrant((int)$_POST['id']);
+    exit;
+}
+
+/* ==========================================================
    COMP LEAVE CLAIMS – EMPLOYEE
 ========================================================== */
 

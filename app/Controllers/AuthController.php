@@ -238,6 +238,21 @@ class AuthController
             $compStmt->execute(['uid' => $user['id']]);
             $compBalance = (float)$compStmt->fetchColumn();
 
+            // Admin-granted balances (event-based, floating)
+            $grantStmt = $db->prepare("
+                SELECT lt.name AS leave_type,
+                       lb.total_days, lb.used_days,
+                       (lb.total_days - lb.used_days) AS remaining_days
+                FROM leave_balances lb
+                JOIN leave_types lt ON lb.leave_type_id = lt.id
+                WHERE lb.employee_id      = :uid
+                  AND lt.balance_source   = 'admin_grant'
+                  AND lb.leave_period_id  IS NULL
+                ORDER BY lt.name ASC
+            ");
+            $grantStmt->execute(['uid' => $user['id']]);
+            $grantBalances = $grantStmt->fetchAll(PDO::FETCH_ASSOC);
+
             $stmt = $db->prepare("SELECT status, COUNT(*) total FROM leave_requests WHERE employee_id = :uid GROUP BY status");
             $stmt->execute(['uid' => $user['id']]);
             $statsRaw = $stmt->fetchAll(PDO::FETCH_ASSOC);

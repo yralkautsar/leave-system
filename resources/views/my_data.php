@@ -191,6 +191,33 @@
         margin-top: 3px;
     }
 
+    .md-bal-comp {
+        border: 1.5px solid #ddd6fe;
+        background: linear-gradient(135deg, #faf5ff 0%, #ede9fe 100%);
+    }
+
+    .md-bal-grant {
+        border: 1.5px solid #fde68a;
+        background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+    }
+
+    .md-comp-batches {
+        margin-top: 8px;
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+    }
+
+    .md-comp-batch {
+        font-size: 11px;
+        background: white;
+        border: 1px solid #ddd6fe;
+        color: #6d28d9;
+        border-radius: 6px;
+        padding: 2px 7px;
+        display: inline-block;
+    }
+
     /* ── HISTORY ── */
     .md-hist-card {
         background: white;
@@ -457,11 +484,15 @@ $activeTab = $_GET['tab'] ?? 'profile';
     </div><!-- .md-profile-grid -->
 
     <!-- Balance summary -->
-    <?php if (!empty($balanceSummary)): ?>
+    <?php
+    $showBalance = !empty($balanceSummary) || !empty($grantBalances) || (isset($compBalance) && $compBalance > 0) || !empty($compClaims);
+    ?>
+    <?php if ($showBalance): ?>
         <p style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#94a3b8;margin:24px 0 10px;">
             Current Leave Balance
         </p>
         <div class="md-bal-grid">
+
             <?php foreach ($balanceSummary as $b): ?>
                 <div class="md-bal-mini">
                     <div class="md-bal-mini-type"><?= htmlspecialchars($b['leave_type']) ?></div>
@@ -473,6 +504,52 @@ $activeTab = $_GET['tab'] ?? 'profile';
                     </div>
                 </div>
             <?php endforeach; ?>
+
+            <?php foreach ($grantBalances ?? [] as $g): ?>
+                <div class="md-bal-mini md-bal-grant">
+                    <div class="md-bal-mini-type" style="color:#92400e;"><?= htmlspecialchars($g['leave_type']) ?></div>
+                    <div class="md-bal-mini-val" style="color:#92400e;">
+                        <?= (float)$g['remaining_days'] ?><span> days</span>
+                    </div>
+                    <div class="md-bal-mini-sub">
+                        <?= (float)$g['used_days'] ?> used &middot; <?= (float)$g['total_days'] ?> total
+                    </div>
+                    <div style="font-size:11px;color:#b45309;margin-top:4px;">Event-based grant</div>
+                </div>
+            <?php endforeach; ?>
+
+            <?php
+            $compTotal   = isset($compBalance)  ? $compBalance  : 0;
+            $compUsedVal = isset($compUsed)      ? $compUsed     : 0;
+            if ($compTotal > 0 || $compUsedVal > 0):
+            ?>
+                <div class="md-bal-mini md-bal-comp">
+                    <div class="md-bal-mini-type" style="color:#7c3aed;">Compensate Leave</div>
+                    <div class="md-bal-mini-val" style="color:#7c3aed;">
+                        <?= number_format($compTotal, 1) ?><span> days</span>
+                    </div>
+                    <div class="md-bal-mini-sub">
+                        <?= number_format($compUsedVal, 1) ?> used &middot; floating balance
+                    </div>
+                    <?php if (!empty($compClaims)): ?>
+                        <div class="md-comp-batches">
+                            <?php foreach ($compClaims as $cc): ?>
+                                <?php if ((float)$cc['days_remaining'] > 0): ?>
+                                    <div class="md-comp-batch">
+                                        <?= number_format((float)$cc['days_remaining'], 1) ?>d
+                                        · expires <?= date('d M Y', strtotime($cc['expires_at'])) ?>
+                                    </div>
+                                <?php endif; ?>
+                            <?php endforeach; ?>
+                        </div>
+                    <?php endif; ?>
+                    <a href="/leave-system/public/comp-claim"
+                        style="font-size:11px;color:#7c3aed;margin-top:8px;display:block;font-weight:600;">
+                        View claims →
+                    </a>
+                </div>
+            <?php endif; ?>
+
         </div>
     <?php endif; ?>
 

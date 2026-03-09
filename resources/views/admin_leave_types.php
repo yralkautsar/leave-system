@@ -159,7 +159,8 @@
         <thead>
             <tr>
                 <th>Name</th>
-                <th>Default Days / Period</th>
+                <th>Balance Source</th>
+                <th>Default Days</th>
                 <th>Employees with Balance</th>
                 <th style="text-align:right;">Action</th>
             </tr>
@@ -167,7 +168,7 @@
         <tbody>
             <?php if (empty($leaveTypes)): ?>
                 <tr>
-                    <td colspan="4" style="padding:0;">
+                    <td colspan="5" style="padding:0;">
                         <div class="empty-state">
                             <div class="empty-state-icon">
                                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
@@ -176,16 +177,39 @@
                                 </svg>
                             </div>
                             <div class="empty-state-title">No leave types yet</div>
-                            <div class="empty-state-desc">Leave types (e.g. Annual Leave, Sick Leave) define what employees can apply for. They're used when generating balances for a period.</div>
+                            <div class="empty-state-desc">Leave types define what employees can apply for.</div>
                             <button class="btn-primary" onclick="openLtModal()">+ Add First Leave Type</button>
                         </div>
                     </td>
                 </tr>
             <?php else: ?>
-                <?php foreach ($leaveTypes as $t): ?>
+                <?php
+                $sourceLabels = [
+                    'period'      => ['Period (Auto-generate)', '#dbeafe', '#1d4ed8'],
+                    'comp'        => ['Compensate Claim',       '#ede9fe', '#6d28d9'],
+                    'unlimited'   => ['Unlimited (No quota)',   '#dcfce7', '#15803d'],
+                    'admin_grant' => ['Admin Grant (Event)',    '#fef3c7', '#92400e'],
+                ];
+                ?>
+                <?php foreach ($leaveTypes as $t):
+                    $src   = $t['balance_source'] ?? 'period';
+                    [$srcLabel, $srcBg, $srcColor] = $sourceLabels[$src] ?? $sourceLabels['period'];
+                ?>
                     <tr>
                         <td style="font-weight:600;color:#0f172a;"><?= htmlspecialchars($t['name']) ?></td>
-                        <td><span class="lt-days-badge"><?= (int)$t['default_days'] ?> days</span></td>
+                        <td>
+                            <span style="background:<?= $srcBg ?>;color:<?= $srcColor ?>;
+                                 padding:3px 10px;border-radius:99px;font-size:12px;font-weight:600;">
+                                <?= $srcLabel ?>
+                            </span>
+                        </td>
+                        <td>
+                            <?php if ($src === 'period'): ?>
+                                <span class="lt-days-badge"><?= (int)$t['default_days'] ?> days</span>
+                            <?php else: ?>
+                                <span class="subtext">—</span>
+                            <?php endif; ?>
+                        </td>
                         <td class="lt-count"><?= (int)$t['employee_count'] ?> employee<?= $t['employee_count'] != 1 ? 's' : '' ?></td>
                         <td>
                             <div style="display:flex;gap:8px;justify-content:flex-end;">
@@ -221,6 +245,31 @@
             '/leave-system/public/admin/leave-types/store';
         const v = k => t ? (t[k] ?? '') : '';
 
+        const sourceOptions = [{
+                value: 'period',
+                label: 'Period (Auto-generate per period)'
+            },
+            {
+                value: 'unlimited',
+                label: 'Unlimited (No quota — Sick Leave)'
+            },
+            {
+                value: 'admin_grant',
+                label: 'Admin Grant (Event-based — Marriage, Maternity, etc.)'
+            },
+            {
+                value: 'comp',
+                label: 'Compensate Claim (Employee submits claim)'
+            },
+        ];
+
+        const srcSel = sourceOptions.map(o =>
+            `<option value="${o.value}" ${v('balance_source') === o.value ? 'selected' : ''}>${o.label}</option>`
+        ).join('');
+
+        const currentSrc = v('balance_source') || 'period';
+        const showDays = currentSrc === 'period';
+
         openGM({
             title: isEdit ? 'Edit Leave Type' : 'Add Leave Type',
             size: 'sm',
@@ -233,9 +282,16 @@
                     placeholder="e.g. Annual Leave, Sick Leave">
             </div>
             <div class="gm-fg">
+                <label>Balance Source <span style="color:#dc2626;">*</span></label>
+                <select name="balance_source" id="ltSrcSel" onchange="toggleDaysField(this.value)">
+                    ${srcSel}
+                </select>
+                <span class="gm-hint">Determines how balance is tracked for this leave type.</span>
+            </div>
+            <div class="gm-fg" id="ltDaysField" style="display:${showDays ? 'flex' : 'none'};flex-direction:column;">
                 <label>Default Days per Period <span style="color:#dc2626;">*</span></label>
-                <input type="number" name="default_days" value="${v('default_days') || 0}" min="0" required>
-                <span class="gm-hint">Used when generating balances. Can be adjusted per employee after generation.</span>
+                <input type="number" name="default_days" value="${v('default_days') || 0}" min="0">
+                <span class="gm-hint">Used when generating balances for a period.</span>
             </div>
         </div>
         <div class="gm-ft">
@@ -247,6 +303,11 @@
                 document.querySelector('.gm-body input[name="name"]')?.focus();
             }
         });
+    }
+
+    function toggleDaysField(src) {
+        const field = document.getElementById('ltDaysField');
+        if (field) field.style.display = src === 'period' ? 'flex' : 'none';
     }
 </script>
 

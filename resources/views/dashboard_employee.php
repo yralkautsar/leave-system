@@ -152,6 +152,16 @@
         box-shadow: 0 8px 20px rgba(124, 58, 237, 0.15);
     }
 
+    .ed-bal-grant {
+        border: 1.5px solid #fde68a;
+        background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+    }
+
+    .ed-bal-grant:hover {
+        border-color: #f59e0b;
+        box-shadow: 0 8px 20px rgba(245, 158, 11, 0.15);
+    }
+
     /* Stats */
     .ed-stats {
         display: grid;
@@ -512,7 +522,7 @@ $userName = explode(' ', $_SESSION['user']['name'])[0];
         <div class="ed-bal-empty">No leave balance allocated for the current period.</div>
     <?php endif; ?>
 
-    <?php if (isset($compBalance) && $compBalance > 0): ?>
+    <?php if ($compBalance > 0): ?>
         <!-- Comp Leave balance card -->
         <a href="/leave-system/public/comp-claim" class="ed-bal-card ed-bal-comp" style="text-decoration:none;color:inherit;">
             <div class="ed-bal-period" style="color:#7c3aed;">
@@ -529,6 +539,25 @@ $userName = explode(' ', $_SESSION['user']['name'])[0];
             <div style="font-size:11px;color:#7c3aed;margin-top:8px;font-weight:600;">View claims →</div>
         </a>
     <?php endif; ?>
+
+    <?php foreach ($grantBalances ?? [] as $g): ?>
+        <?php if ((float)$g['remaining_days'] > 0): ?>
+            <div class="ed-bal-card ed-bal-grant">
+                <div class="ed-bal-period" style="color:#92400e;">
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                        <circle cx="12" cy="7" r="4" />
+                    </svg>
+                    <span>Event-based grant</span>
+                </div>
+                <div class="ed-bal-type"><?= htmlspecialchars($g['leave_type']) ?></div>
+                <div class="ed-bal-remaining" style="color:#92400e;">
+                    <?= (float)$g['remaining_days'] ?><span>days left</span>
+                </div>
+                <div class="ed-bal-meta"><?= (float)$g['used_days'] ?> used &middot; <?= (float)$g['total_days'] ?> total</div>
+            </div>
+        <?php endif; ?>
+    <?php endforeach; ?>
 
 </div>
 

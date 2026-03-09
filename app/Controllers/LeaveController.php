@@ -89,11 +89,12 @@ class LeaveController
         $workDays = array_map('intval', $stmt->fetchAll(PDO::FETCH_COLUMN));
         if (empty($workDays)) $workDays = [1, 2, 3, 4, 5]; // fallback Mon–Fri
 
-        // Leave types with balance for current active period
+        // Leave types with balance — respects balance_source
         $stmt = $db->prepare("
             SELECT
                 lt.id,
                 lt.name,
+                lt.balance_source,
                 COALESCE(lb.remaining_days, 0) AS remaining_days,
                 COALESCE(lb.total_days,     0) AS total_days,
                 COALESCE(lb.used_days,      0) AS used_days
@@ -101,14 +102,38 @@ class LeaveController
             LEFT JOIN leave_balances lb
                 ON  lb.leave_type_id  = lt.id
                 AND lb.employee_id    = :id
-                AND lb.leave_period_id IN (
-                    SELECT id FROM leave_periods
-                    WHERE start_date <= CURDATE() AND end_date >= CURDATE()
+                AND (
+                    lb.leave_period_id IN (
+                        SELECT id FROM leave_periods
+                        WHERE start_date <= CURDATE() AND end_date >= CURDATE()
+                    )
+                    OR (lt.balance_source = 'admin_grant' AND lb.leave_period_id IS NULL)
                 )
             ORDER BY lt.name ASC
         ");
         $stmt->execute(['id' => $userId]);
-        $leaveTypes = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $leaveTypesRaw = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        // For comp leave, override remaining_days from comp_claims
+        $compStmt = $db->prepare("
+            SELECT COALESCE(SUM(days_remaining), 0)
+            FROM comp_claims
+            WHERE employee_id = :id
+              AND status      = 'approved'
+              AND expires_at  > CURDATE()
+        ");
+        $compStmt->execute(['id' => $userId]);
+        $compAvailable = (float)$compStmt->fetchColumn();
+
+        $leaveTypes = [];
+        foreach ($leaveTypesRaw as $lt) {
+            if ($lt['balance_source'] === 'comp') {
+                $lt['remaining_days'] = $compAvailable;
+                $lt['total_days']     = $compAvailable;
+                $lt['used_days']      = 0;
+            }
+            $leaveTypes[] = $lt;
+        }
 
         require __DIR__ . '/../../resources/views/leave_create.php';
     }
@@ -145,21 +170,71 @@ class LeaveController
         $stmt->execute(['id' => $userId]);
         $history = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-        // Current balances (all active periods)
+        // Current balances — ONLY period-based (Annual Leave)
         $stmt = $db->prepare("
-            SELECT lt.name AS leave_type, lp.name AS period_name,
+            SELECT lt.name AS leave_type, lt.balance_source,
+                   lp.name AS period_name, lp.end_date,
                    lb.total_days, lb.used_days,
                    (lb.total_days - lb.used_days) AS remaining_days
             FROM leave_balances lb
             JOIN leave_types   lt ON lb.leave_type_id   = lt.id
             JOIN leave_periods lp ON lb.leave_period_id = lp.id
-            WHERE lb.employee_id = :id
-            AND   lp.start_date <= CURDATE()
-            AND   lp.end_date   >= CURDATE()
+            WHERE lb.employee_id    = :id
+            AND   lt.balance_source = 'period'
+            AND   lp.start_date    <= CURDATE()
+            AND   lp.end_date      >= CURDATE()
             ORDER BY lt.name ASC
         ");
         $stmt->execute(['id' => $userId]);
         $balanceSummary = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        // Admin-granted balances (floating, no period)
+        $grantStmt = $db->prepare("
+            SELECT lt.name AS leave_type,
+                   lb.total_days, lb.used_days,
+                   (lb.total_days - lb.used_days) AS remaining_days
+            FROM leave_balances lb
+            JOIN leave_types lt ON lb.leave_type_id = lt.id
+            WHERE lb.employee_id      = :id
+              AND lt.balance_source   = 'admin_grant'
+              AND lb.leave_period_id  IS NULL
+            ORDER BY lt.name ASC
+        ");
+        $grantStmt->execute(['id' => $userId]);
+        $grantBalances = $grantStmt->fetchAll(PDO::FETCH_ASSOC);
+
+        // Compensate Leave balance — from comp_claims (floating, not leave_balances)
+        $compStmt = $db->prepare("
+            SELECT COALESCE(SUM(days_remaining), 0)
+            FROM comp_claims
+            WHERE employee_id = :id
+              AND status      = 'approved'
+              AND expires_at  > CURDATE()
+        ");
+        $compStmt->execute(['id' => $userId]);
+        $compBalance = (float)$compStmt->fetchColumn();
+
+        // Comp claims breakdown (approved, for expiry detail)
+        $compDetailStmt = $db->prepare("
+            SELECT days_earned, days_remaining, expires_at, worked_date
+            FROM comp_claims
+            WHERE employee_id = :id
+              AND status      = 'approved'
+              AND expires_at  > CURDATE()
+            ORDER BY expires_at ASC
+        ");
+        $compDetailStmt->execute(['id' => $userId]);
+        $compClaims = $compDetailStmt->fetchAll(PDO::FETCH_ASSOC);
+
+        // Total comp used = earned - remaining (approved, not expired + expired)
+        $compUsedStmt = $db->prepare("
+            SELECT COALESCE(SUM(days_earned - days_remaining), 0)
+            FROM comp_claims
+            WHERE employee_id = :id
+              AND status = 'approved'
+        ");
+        $compUsedStmt->execute(['id' => $userId]);
+        $compUsed = (float)$compUsedStmt->fetchColumn();
 
         // Periods list for filter dropdown
         $periods = $db->query("SELECT id, name FROM leave_periods ORDER BY start_date DESC")
@@ -214,14 +289,15 @@ class LeaveController
             ? max(0.5, round($workingDays / 2, 1))
             : (float)$workingDays;
 
-        // ── 3. Detect Compensate Leave ─────────────────────────────
-        $ltNameStmt = $db->prepare("SELECT name FROM leave_types WHERE id = :id");
-        $ltNameStmt->execute(['id' => $leaveTypeId]);
-        $leaveTypeName = (string)$ltNameStmt->fetchColumn();
-        $isCompLeave   = (stripos($leaveTypeName, 'compensat') !== false);
+        // ── 3. Detect balance source ──────────────────────────────
+        $ltStmt = $db->prepare("SELECT name, balance_source FROM leave_types WHERE id = :id");
+        $ltStmt->execute(['id' => $leaveTypeId]);
+        $ltRow         = $ltStmt->fetch(PDO::FETCH_ASSOC);
+        $leaveTypeName = $ltRow ? (string)$ltRow['name'] : '';
+        $balanceSource = $ltRow ? (string)$ltRow['balance_source'] : 'period';
 
-        if ($isCompLeave) {
-            // ── Comp leave: balance from comp_claims (floating, no period) ──
+        if ($balanceSource === 'comp') {
+            // ── Comp leave: balance from comp_claims ───────────────────
             $availStmt = $db->prepare("
                 SELECT COALESCE(SUM(days_remaining), 0)
                 FROM comp_claims
@@ -237,11 +313,32 @@ class LeaveController
                 header("Location: /leave-system/public/leave");
                 exit;
             }
+            $leavePeriodId = null;
+        } elseif ($balanceSource === 'unlimited') {
+            // ── Unlimited (Sick Leave): no balance check, no period ────
+            $leavePeriodId = null;
+        } elseif ($balanceSource === 'admin_grant') {
+            // ── Admin grant: check leave_balances where period IS NULL ─
+            $stmt = $db->prepare("
+                SELECT id, remaining_days
+                FROM leave_balances
+                WHERE employee_id    = :emp
+                  AND leave_type_id  = :type
+                  AND leave_period_id IS NULL
+                LIMIT 1
+            ");
+            $stmt->execute(['emp' => $empId, 'type' => $leaveTypeId]);
+            $grantRow = $stmt->fetch(PDO::FETCH_ASSOC);
 
+            if (!$grantRow || (float)$grantRow['remaining_days'] < $totalDays) {
+                $available = $grantRow ? (float)$grantRow['remaining_days'] : 0;
+                $_SESSION['error'] = "Insufficient {$leaveTypeName} balance. You have {$available} day(s) available.";
+                header("Location: /leave-system/public/leave");
+                exit;
+            }
             $leavePeriodId = null;
         } else {
-            // ── 3. Server-side period resolution ──────────────────────────
-            // Find a period where the employee has balance AND start_date falls within
+            // ── Period leave (Annual Leave): find active period ────────
             $stmt = $db->prepare("
                 SELECT lb.leave_period_id, lp.name AS period_name, lb.remaining_days
                 FROM leave_balances lb
@@ -269,7 +366,6 @@ class LeaveController
             $leavePeriodId = $periodRow['leave_period_id'];
             $remaining     = (float)$periodRow['remaining_days'];
 
-            // ── 4. Balance pre-check ───────────────────────────────────────
             if ($remaining < $totalDays) {
                 $_SESSION['error'] = "Insufficient balance. You have {$remaining} day(s) remaining but this request requires {$totalDays} day(s).";
                 header("Location: /leave-system/public/leave");
@@ -417,13 +513,14 @@ class LeaveController
                 throw new Exception("Request not found or already processed.");
             }
 
-            // ── Detect leave type ──────────────────────────────────────
-            $ltStmt = $db->prepare("SELECT name FROM leave_types WHERE id = :id");
+            // ── Detect balance source ──────────────────────────
+            $ltStmt = $db->prepare("SELECT name, balance_source FROM leave_types WHERE id = :id");
             $ltStmt->execute(['id' => $request['leave_type_id']]);
-            $leaveTypeName = (string)$ltStmt->fetchColumn();
-            $isCompLeave   = (stripos($leaveTypeName, 'compensat') !== false);
+            $ltRow         = $ltStmt->fetch(PDO::FETCH_ASSOC);
+            $leaveTypeName = $ltRow ? (string)$ltRow['name'] : '';
+            $balanceSource = $ltRow ? (string)$ltRow['balance_source'] : 'period';
 
-            if ($isCompLeave) {
+            if ($balanceSource === 'comp') {
                 // ── Comp leave: deduct from comp_claims FIFO by expires_at ──
                 $availStmt = $db->prepare("
                     SELECT COALESCE(SUM(days_remaining), 0)
@@ -440,8 +537,7 @@ class LeaveController
                 }
 
                 $claimsStmt = $db->prepare("
-                    SELECT id, days_remaining
-                    FROM comp_claims
+                    SELECT id, days_remaining FROM comp_claims
                     WHERE employee_id = :emp
                       AND status      = 'approved'
                       AND expires_at  > CURDATE()
@@ -455,22 +551,52 @@ class LeaveController
                 foreach ($claimsRows as $cr) {
                     if ($toDeduct <= 0) break;
                     $deduct = min($toDeduct, (float)$cr['days_remaining']);
-                    $db->prepare("
-                        UPDATE comp_claims SET days_remaining = days_remaining - :d WHERE id = :id
-                    ")->execute(['d' => $deduct, 'id' => $cr['id']]);
+                    $db->prepare("UPDATE comp_claims SET days_remaining = days_remaining - :d WHERE id = :id")
+                        ->execute(['d' => $deduct, 'id' => $cr['id']]);
                     $toDeduct -= $deduct;
                 }
+            } elseif ($balanceSource === 'unlimited') {
+                // ── Unlimited (Sick Leave): no deduction needed ───────────
+
+            } elseif ($balanceSource === 'admin_grant') {
+                // ── Admin grant: deduct from leave_balances (period IS NULL) ─
+                $balStmt = $db->prepare("
+                    SELECT id, remaining_days FROM leave_balances
+                    WHERE employee_id   = :emp
+                      AND leave_type_id = :type
+                      AND leave_period_id IS NULL
+                    LIMIT 1
+                    FOR UPDATE
+                ");
+                $balStmt->execute([
+                    'emp'  => $request['employee_id'],
+                    'type' => $request['leave_type_id'],
+                ]);
+                $balance = $balStmt->fetch(PDO::FETCH_ASSOC);
+
+                if (!$balance || (float)$balance['remaining_days'] < $request['total_days']) {
+                    throw new Exception("Insufficient {$leaveTypeName} balance.");
+                }
+
+                $db->prepare("
+                    UPDATE leave_balances
+                    SET used_days      = used_days + :days,
+                        remaining_days = remaining_days - :days
+                    WHERE id = :id
+                ")->execute(['days' => $request['total_days'], 'id' => $balance['id']]);
             } else {
-                // ── Normal leave: deduct from leave_balances ───────────────
+                // ── Period leave (Annual): deduct from leave_balances ──────
                 $stmt = $db->prepare("
                     SELECT * FROM leave_balances
-                    WHERE employee_id = :emp
-                    AND leave_period_id = :period
+                    WHERE employee_id    = :emp
+                      AND leave_type_id  = :type
+                      AND leave_period_id = :period
                     FOR UPDATE
                 ");
                 $stmt->execute([
                     'emp'    => $request['employee_id'],
-                    'period' => $request['leave_period_id']
+                    'type'   => $request['leave_type_id'],
+                    'period' => $request['leave_period_id'],
                 ]);
                 $balance = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -478,16 +604,12 @@ class LeaveController
                     throw new Exception("Insufficient leave balance.");
                 }
 
-                $stmt = $db->prepare("
+                $db->prepare("
                     UPDATE leave_balances
-                    SET used_days = used_days + :days,
+                    SET used_days      = used_days + :days,
                         remaining_days = remaining_days - :days
                     WHERE id = :id
-                ");
-                $stmt->execute([
-                    'days' => $request['total_days'],
-                    'id'   => $balance['id']
-                ]);
+                ")->execute(['days' => $request['total_days'], 'id' => $balance['id']]);
             }
 
             $stmt = $db->prepare("
@@ -1365,11 +1487,14 @@ class LeaveController
 
             if (!$period) throw new Exception("Leave period not found.");
 
-            $leaveTypes = $db->query("SELECT * FROM leave_types WHERE default_days > 0")
-                ->fetchAll(PDO::FETCH_ASSOC);
+            $leaveTypes = $db->query("
+                SELECT * FROM leave_types
+                WHERE balance_source = 'period'
+                AND default_days > 0
+            ")->fetchAll(PDO::FETCH_ASSOC);
 
             if (empty($leaveTypes))
-                throw new Exception("No leave types with default_days > 0. Configure leave types first.");
+                throw new Exception("No leave types with balance_source='period' and default_days > 0. Configure leave types first.");
 
             $employees = $db->query("SELECT * FROM users WHERE role = 'employee' AND is_active = 1")
                 ->fetchAll(PDO::FETCH_ASSOC);
@@ -1463,8 +1588,12 @@ class LeaveController
         self::authorizeAdmin();
         $db = Database::connect();
 
-        $name = trim($_POST['name']         ?? '');
-        $days = (int)($_POST['default_days'] ?? 0);
+        $name   = trim($_POST['name']          ?? '');
+        $days   = (int)($_POST['default_days'] ?? 0);
+        $source = $_POST['balance_source']     ?? 'period';
+
+        $validSources = ['period', 'comp', 'unlimited', 'admin_grant'];
+        if (!in_array($source, $validSources)) $source = 'period';
 
         if (!$name) {
             $_SESSION['error'] = "Leave type name is required.";
@@ -1480,8 +1609,11 @@ class LeaveController
             exit;
         }
 
-        $db->prepare("INSERT INTO leave_types (name, default_days) VALUES (:name, :days)")
-            ->execute(['name' => $name, 'days' => $days]);
+        // unlimited and admin_grant don't use default_days — force to 0
+        if (in_array($source, ['unlimited', 'admin_grant', 'comp'])) $days = 0;
+
+        $db->prepare("INSERT INTO leave_types (name, default_days, balance_source) VALUES (:name, :days, :source)")
+            ->execute(['name' => $name, 'days' => $days, 'source' => $source]);
 
         $_SESSION['success'] = "Leave type \"{$name}\" added.";
         header("Location: /leave-system/public/admin/leave-types");
@@ -2259,6 +2391,139 @@ class LeaveController
 
         header('Content-Type: application/json');
         echo json_encode($result);
+        exit;
+    }
+
+    /* ==========================================================
+       ADMIN – LEAVE GRANTS (admin_grant types)
+    ========================================================== */
+
+    public static function leaveGrants()
+    {
+        self::authorizeAdmin();
+        $db = Database::connect();
+
+        // Only admin_grant leave types
+        $grantTypes = $db->query("
+            SELECT * FROM leave_types
+            WHERE balance_source = 'admin_grant'
+            ORDER BY name ASC
+        ")->fetchAll(PDO::FETCH_ASSOC);
+
+        $employees = $db->query("
+            SELECT id, name FROM users
+            WHERE role = 'employee' AND is_active = 1
+            ORDER BY name ASC
+        ")->fetchAll(PDO::FETCH_ASSOC);
+
+        // Recent grants
+        $grants = $db->query("
+            SELECT lb.id, lb.total_days, lb.used_days,
+                   (lb.total_days - lb.used_days) AS remaining_days,
+                   lb.created_at,
+                   u.name  AS employee_name,
+                   lt.name AS leave_type,
+                   lb.grant_reason,
+                   ab.name AS granted_by_name
+            FROM leave_balances lb
+            JOIN users       u  ON u.id  = lb.employee_id
+            JOIN leave_types lt ON lt.id = lb.leave_type_id
+            LEFT JOIN users  ab ON ab.id = lb.granted_by
+            WHERE lt.balance_source  = 'admin_grant'
+              AND lb.leave_period_id IS NULL
+            ORDER BY lb.created_at DESC
+            LIMIT 100
+        ")->fetchAll(PDO::FETCH_ASSOC);
+
+        require __DIR__ . '/../../resources/views/admin_leave_grants.php';
+    }
+
+    public static function storeLeaveGrant()
+    {
+        self::authorizeAdmin();
+        $db = Database::connect();
+
+        $employeeId  = (int)($_POST['employee_id']  ?? 0);
+        $leaveTypeId = (int)($_POST['leave_type_id'] ?? 0);
+        $days        = (float)($_POST['days']        ?? 0);
+        $reason      = trim($_POST['reason']         ?? '');
+
+        if (!$employeeId || !$leaveTypeId || $days <= 0) {
+            $_SESSION['error'] = "All fields are required and days must be greater than 0.";
+            header("Location: /leave-system/public/admin/leave-grants");
+            exit;
+        }
+
+        // Verify leave type is admin_grant
+        $ltStmt = $db->prepare("SELECT balance_source FROM leave_types WHERE id = :id");
+        $ltStmt->execute(['id' => $leaveTypeId]);
+        $lt = $ltStmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$lt || $lt['balance_source'] !== 'admin_grant') {
+            $_SESSION['error'] = "Invalid leave type for manual grant.";
+            header("Location: /leave-system/public/admin/leave-grants");
+            exit;
+        }
+
+        // Check if a grant record already exists for this emp + type (floating)
+        $existing = $db->prepare("
+            SELECT id, total_days, remaining_days FROM leave_balances
+            WHERE employee_id    = :emp
+              AND leave_type_id  = :type
+              AND leave_period_id IS NULL
+            LIMIT 1
+        ");
+        $existing->execute(['emp' => $employeeId, 'type' => $leaveTypeId]);
+        $row = $existing->fetch(PDO::FETCH_ASSOC);
+
+        if ($row) {
+            // Add to existing grant
+            $db->prepare("
+                UPDATE leave_balances
+                SET total_days     = total_days + :days,
+                    remaining_days = remaining_days + :days,
+                    grant_reason   = :reason,
+                    granted_by     = :admin,
+                    created_at     = NOW()
+                WHERE id = :id
+            ")->execute([
+                'days'   => $days,
+                'reason' => $reason ?: null,
+                'admin'  => $_SESSION['user']['id'],
+                'id'     => $row['id'],
+            ]);
+        } else {
+            // Insert new grant record
+            $db->prepare("
+                INSERT INTO leave_balances
+                (employee_id, leave_type_id, leave_period_id, total_days, remaining_days, used_days,
+                 grant_reason, granted_by, created_at)
+                VALUES
+                (:emp, :type, NULL, :days, :days, 0, :reason, :admin, NOW())
+            ")->execute([
+                'emp'    => $employeeId,
+                'type'   => $leaveTypeId,
+                'days'   => $days,
+                'reason' => $reason ?: null,
+                'admin'  => $_SESSION['user']['id'],
+            ]);
+        }
+
+        $_SESSION['success'] = "Leave granted successfully.";
+        header("Location: /leave-system/public/admin/leave-grants");
+        exit;
+    }
+
+    public static function revokeLeaveGrant(int $id)
+    {
+        self::authorizeAdmin();
+        $db = Database::connect();
+
+        $db->prepare("DELETE FROM leave_balances WHERE id = :id AND leave_period_id IS NULL")
+            ->execute(['id' => $id]);
+
+        $_SESSION['success'] = "Grant removed.";
+        header("Location: /leave-system/public/admin/leave-grants");
         exit;
     }
 
