@@ -784,10 +784,21 @@ $next = date('Y-m', strtotime('+1 month', strtotime($monthStart)));
                             <select name="leave_type_id" id="fLeaveType" onchange="updatePreview()">
                                 <option value="">Select type…</option>
                                 <?php foreach ($leaveTypes as $lt): ?>
+                                    <?php
+                                    $src = $lt['balance_source'] ?? 'period';
+                                    if ($src === 'unlimited') {
+                                        $label = 'Unlimited';
+                                    } elseif ($src === 'admin_grant') {
+                                        $label = ((float)$lt['remaining_days']) . ' days granted';
+                                    } else {
+                                        $label = ((float)$lt['remaining_days']) . ' days left';
+                                    }
+                                    ?>
                                     <option value="<?= $lt['id'] ?>"
-                                        data-balance="<?= (float)$lt['remaining_days'] ?>">
+                                        data-balance="<?= (float)$lt['remaining_days'] ?>"
+                                        data-source="<?= htmlspecialchars($src) ?>">
                                         <?= htmlspecialchars($lt['name']) ?>
-                                        (<?= (float)$lt['remaining_days'] ?> days left)
+                                        (<?= $label ?>)
                                     </option>
                                 <?php endforeach; ?>
                             </select>
@@ -901,9 +912,10 @@ $next = date('Y-m', strtotime('+1 month', strtotime($monthStart)));
     const HOLIDAYS = <?= json_encode(array_column($holidays, 'name', 'date')) ?>;
     const WORK_DAYS = <?= json_encode($workDays) ?>; // ISO: 1=Mon..7=Sun
     const LEAVE_TYPES = <?= json_encode(array_values(array_map(fn($lt) => [
-                            'id'            => $lt['id'],
-                            'name'          => $lt['name'],
-                            'remaining'     => (float)$lt['remaining_days'],
+                            'id'        => $lt['id'],
+                            'name'      => $lt['name'],
+                            'source'    => $lt['balance_source'] ?? 'period',
+                            'remaining' => (float)$lt['remaining_days'],
                         ], $leaveTypes))) ?>;
     const TEAM_LEAVES = <?= json_encode(array_values($teamLeaves)) ?>;
 
@@ -1080,12 +1092,20 @@ $next = date('Y-m', strtotime('+1 month', strtotime($monthStart)));
         const balVal = document.getElementById('balanceVal');
 
         if (typeOpt && typeOpt.value) {
+            const source = typeOpt.dataset.source || 'period';
             const remaining = parseFloat(typeOpt.dataset.balance);
-            const enough = days === null || days === 0 || remaining >= days;
             balInfo.style.display = 'flex';
-            balInfo.className = 'lc-balance-info' + (enough ? '' : ' warn');
-            balLabel.textContent = enough ? 'Balance remaining' : '⚠ Insufficient balance';
-            balVal.textContent = remaining + ' days';
+
+            if (source === 'unlimited') {
+                balInfo.className = 'lc-balance-info';
+                balLabel.textContent = '✓ No quota limit';
+                balVal.textContent = 'Unlimited';
+            } else {
+                const enough = days === null || days === 0 || remaining >= days;
+                balInfo.className = 'lc-balance-info' + (enough ? '' : ' warn');
+                balLabel.textContent = enough ? 'Balance remaining' : '⚠ Insufficient balance';
+                balVal.textContent = remaining + ' days';
+            }
         } else {
             balInfo.style.display = 'none';
         }
