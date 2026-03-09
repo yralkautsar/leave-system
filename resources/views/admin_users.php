@@ -259,6 +259,24 @@ $roleLabel   = ['employee' => 'Employee', 'admin_approver' => 'Admin'];
         background: #dcfce7;
     }
 
+    .u-btn-reset {
+        padding: 6px 14px;
+        border-radius: 8px;
+        font-size: 12.5px;
+        font-weight: 500;
+        border: 1px solid #94a3b8;
+        background: #fff;
+        color: #475569;
+        cursor: pointer;
+        transition: .15s ease;
+    }
+
+    .u-btn-reset:hover {
+        border-color: #f97316;
+        color: #f97316;
+        background: #fff7ed;
+    }
+
     /* ── HoD cell ── */
     .u-hod-name {
         font-size: 13px;
@@ -519,6 +537,10 @@ $roleLabel   = ['employee' => 'Employee', 'admin_approver' => 'Admin'];
                                     onclick='openUserModal(<?= htmlspecialchars(json_encode($u), ENT_QUOTES) ?>)'>
                                     Edit
                                 </button>
+                                <button class="u-btn-reset"
+                                    onclick='openResetPwModal(<?= (int)$u['id'] ?>, <?= htmlspecialchars(json_encode($u['name']), ENT_QUOTES) ?>)'>
+                                    Reset PW
+                                </button>
                                 <form method="POST" action="/leave-system/public/admin/users/toggle-status" style="margin:0;">
                                     <input type="hidden" name="user_id" value="<?= $u['id'] ?>">
                                     <?php if ($u['is_active']): ?>
@@ -547,6 +569,7 @@ $roleLabel   = ['employee' => 'Employee', 'admin_approver' => 'Admin'];
     const DEPTS = <?= json_encode(array_values($departments)) ?>;
     const JOB_TITLES = <?= json_encode(array_values($jobTitles)) ?>;
     const ALL_USERS = <?= json_encode(array_values($allUsers)) ?>;
+    const WORK_SCHEDS = <?= json_encode(array_values($workSchedules)) ?>;
 
     function selOpts(data, vKey, lKey, selId, placeholder) {
         let h = `<option value="">${placeholder}</option>`;
@@ -619,6 +642,13 @@ $roleLabel   = ['employee' => 'Employee', 'admin_approver' => 'Admin'];
                     <select name="job_title_id">${selOpts(JOB_TITLES, 'id', 'name', v('job_title_id'), 'Select Job Title')}</select>
                 </div>
                 <div class="u-fg">
+                    <label>Work Schedule <span class="u-req">*</span></label>
+                    <select name="work_schedule_id" required>
+                        <option value="">Select Schedule</option>
+                        ${WORK_SCHEDS.map(w => `<option value="${w.id}" ${w.id == v('work_schedule_id') ? 'selected' : ''}>${escH(w.name)}</option>`).join('')}
+                    </select>
+                </div>
+                <div class="u-fg">
                     <label>Join Date <span class="u-req">*</span></label>
                     <input type="date" name="join_date" value="${escH(v('join_date'))}" required>
                 </div>
@@ -651,6 +681,62 @@ $roleLabel   = ['employee' => 'Employee', 'admin_approver' => 'Admin'];
         });
     }
     /* closeUserModal removed — use closeGM() from layout.php */
+
+    function openResetPwModal(userId, userName) {
+        openGM({
+            title: 'Reset Password',
+            size: 'sm',
+            html: `
+        <form method="POST" action="/leave-system/public/admin/users/reset-password"
+              style="display:contents;"
+              onsubmit="return validateResetPw(this)">
+        <input type="hidden" name="user_id" value="${userId}">
+        <div class="gm-body" style="padding:20px 28px;">
+            <p style="margin:0 0 18px;font-size:13.5px;color:#64748b;">
+                Resetting password for <strong style="color:#0f172a;">${escH(userName)}</strong>.
+                Employee must be notified manually.
+            </p>
+            <div class="u-fg" style="margin-bottom:14px;">
+                <label>New Password <span class="u-req">*</span></label>
+                <input type="password" name="password" id="rpPw" required
+                    placeholder="Min. 8 characters" autocomplete="new-password">
+            </div>
+            <div class="u-fg">
+                <label>Confirm Password <span class="u-req">*</span></label>
+                <input type="password" name="password_confirm" id="rpPwC" required
+                    placeholder="Repeat password" autocomplete="new-password">
+            </div>
+            <div id="rpErr" style="display:none;margin-top:10px;font-size:12.5px;
+                color:#dc2626;background:#fee2e2;padding:8px 12px;border-radius:8px;">
+            </div>
+        </div>
+        <div class="gm-ft">
+            <button type="button" class="gm-btn-cancel" onclick="closeGM()">Cancel</button>
+            <button type="submit" class="gm-btn-save">Reset Password</button>
+        </div>
+        </form>`,
+            onOpen: () => {
+                document.getElementById('rpPw')?.focus();
+            }
+        });
+    }
+
+    function validateResetPw(form) {
+        const pw = document.getElementById('rpPw')?.value || '';
+        const pwc = document.getElementById('rpPwC')?.value || '';
+        const err = document.getElementById('rpErr');
+        if (pw.length < 8) {
+            err.textContent = 'Password must be at least 8 characters.';
+            err.style.display = 'block';
+            return false;
+        }
+        if (pw !== pwc) {
+            err.textContent = 'Passwords do not match.';
+            err.style.display = 'block';
+            return false;
+        }
+        return true;
+    }
 </script>
 
 <?php

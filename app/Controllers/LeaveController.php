@@ -1226,26 +1226,28 @@ class LeaveController
 
         $sql = "
             UPDATE users SET
-                name          = :name,
-                email         = :email,
-                role          = :role,
-                department_id = :dept,
-                job_title_id  = :job,
-                hod_id        = :hod,
-                gm_id         = :gm,
-                join_date     = :join
+                name             = :name,
+                email            = :email,
+                role             = :role,
+                department_id    = :dept,
+                job_title_id     = :job,
+                hod_id           = :hod,
+                gm_id            = :gm,
+                join_date        = :join,
+                work_schedule_id = :schedule
         ";
 
         $params = [
-            'name'  => trim($_POST['name']),
-            'email' => $email,
-            'role'  => $_POST['role'],
-            'dept'  => $_POST['department_id'] ?: null,
-            'job'   => $_POST['job_title_id']  ?: null,
-            'hod'   => $_POST['hod_id']        ?: null,
-            'gm'    => $_POST['gm_id']         ?: null,
-            'join'  => $_POST['join_date'],
-            'id'    => $id,
+            'name'     => trim($_POST['name']),
+            'email'    => $email,
+            'role'     => $_POST['role'],
+            'dept'     => $_POST['department_id']    ?: null,
+            'job'      => $_POST['job_title_id']     ?: null,
+            'hod'      => $_POST['hod_id']           ?: null,
+            'gm'       => $_POST['gm_id']            ?: null,
+            'join'     => $_POST['join_date'],
+            'schedule' => $_POST['work_schedule_id'] ?: null,
+            'id'       => $id,
         ];
 
         // Only update password if provided
@@ -1260,6 +1262,45 @@ class LeaveController
         $stmt->execute($params);
 
         $_SESSION['success'] = "User updated.";
+        header("Location: /leave-system/public/admin/users");
+        exit;
+    }
+
+    public static function adminResetPassword()
+    {
+        self::authorizeAdmin();
+        $db = Database::connect();
+
+        $userId   = (int)($_POST['user_id']   ?? 0);
+        $password = $_POST['password']         ?? '';
+
+        if (!$userId || strlen($password) < 8) {
+            $_SESSION['error'] = "Invalid request. Password must be at least 8 characters.";
+            header("Location: /leave-system/public/admin/users");
+            exit;
+        }
+
+        // Safety: cannot reset your own password via this route
+        if ($userId === (int)$_SESSION['user']['id']) {
+            $_SESSION['error'] = "Use the profile page to change your own password.";
+            header("Location: /leave-system/public/admin/users");
+            exit;
+        }
+
+        $stmt = $db->prepare("
+            UPDATE users SET password_hash = :hash WHERE id = :id
+        ");
+        $stmt->execute([
+            'hash' => password_hash($password, PASSWORD_DEFAULT),
+            'id'   => $userId,
+        ]);
+
+        // Get employee name for success message
+        $nameStmt = $db->prepare("SELECT name FROM users WHERE id = :id");
+        $nameStmt->execute(['id' => $userId]);
+        $name = $nameStmt->fetchColumn() ?: 'User';
+
+        $_SESSION['success'] = "Password for {$name} has been reset successfully.";
         header("Location: /leave-system/public/admin/users");
         exit;
     }
@@ -1681,62 +1722,232 @@ class LeaveController
         $search = $_GET['search'] ?? '';
         $type   = $_GET['type']   ?? '';
         $period = $_GET['period'] ?? '';
+        $source = $_GET['source'] ?? ''; // NEW: period|comp|admin_grant|unlimited
 
+        // ── Active period IDs for default filter ───────────────────────
         $activePeriods = $db->query("
             SELECT id FROM leave_periods
             WHERE start_date <= CURDATE() AND end_date >= CURDATE()
         ")->fetchAll(PDO::FETCH_COLUMN);
 
-        $query = "
-            SELECT
-                u.name   AS employee_name,
-                u.id     AS employee_id,
-                lt.name  AS leave_type,
-                lt.id    AS leave_type_id,
-                lp.name  AS period_name,
-                lp.id    AS period_id,
-                lp.start_date AS period_start,
-                lp.end_date   AS period_end,
-                lb.id         AS balance_id,
-                lb.total_days,
-                lb.used_days,
-                lb.remaining_days
-            FROM leave_balances lb
-            JOIN users        u  ON lb.employee_id     = u.id
-            JOIN leave_types  lt ON lb.leave_type_id   = lt.id
-            JOIN leave_periods lp ON lb.leave_period_id = lp.id
-            WHERE 1=1
-        ";
-        $params = [];
+        $rows = [];
 
-        if ($search) {
-            $query .= " AND u.name LIKE :search";
-            $params['search'] = "%{$search}%";
+        // ────────────────────────────────────────────────────────────────
+        // 1. PERIOD leaves — from leave_balances JOIN leave_periods
+        // ────────────────────────────────────────────────────────────────
+        if (!$source || $source === 'period') {
+            $q1 = "
+                SELECT
+                    u.id     AS employee_id,
+                    u.name   AS employee_name,
+                    lt.id    AS leave_type_id,
+                    lt.name  AS leave_type,
+                    lt.balance_source,
+                    lp.id    AS period_id,
+                    lp.name  AS period_name,
+                    lp.start_date AS period_start,
+                    lp.end_date   AS period_end,
+                    lb.id         AS balance_id,
+                    lb.total_days,
+                    lb.used_days,
+                    lb.remaining_days
+                FROM leave_balances lb
+                JOIN users       u  ON lb.employee_id    = u.id
+                JOIN leave_types lt ON lb.leave_type_id  = lt.id
+                JOIN leave_periods lp ON lb.leave_period_id = lp.id
+                WHERE lt.balance_source = 'period'
+                  AND u.is_active = 1
+            ";
+            $p1 = [];
+            if ($search) {
+                $q1 .= " AND u.name LIKE :search";
+                $p1['search'] = "%{$search}%";
+            }
+            if ($type) {
+                $q1 .= " AND lt.id = :type";
+                $p1['type']   = $type;
+            }
+            if ($period) {
+                $q1 .= " AND lp.id = :period";
+                $p1['period'] = $period;
+            } elseif (!empty($activePeriods) && !$search && !$type) {
+                $in = implode(',', array_map('intval', $activePeriods));
+                $q1 .= " AND lp.id IN ({$in})";
+            }
+            $q1 .= " ORDER BY u.name ASC, lp.start_date ASC";
+            $stmt = $db->prepare($q1);
+            $stmt->execute($p1);
+            foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $r) $rows[] = $r;
         }
-        if ($type) {
-            $query .= " AND lt.id = :type";
-            $params['type'] = $type;
+
+        // Skip non-period sources if period filter is active
+        $skipFloating = !empty($period);
+
+        if (!$skipFloating) {
+
+            // ──────────────────────────────────────────────────────────
+            // 2. COMP leaves — aggregate from comp_claims
+            // ──────────────────────────────────────────────────────────
+            if ((!$source || $source === 'comp') && (!$type || self::leaveTypeSource($db, $type) === 'comp')) {
+                $q2 = "
+                    SELECT
+                        u.id    AS employee_id,
+                        u.name  AS employee_name,
+                        lt.id   AS leave_type_id,
+                        lt.name AS leave_type,
+                        'comp'  AS balance_source,
+                        NULL    AS period_id,
+                        NULL    AS period_name,
+                        NULL    AS period_start,
+                        NULL    AS period_end,
+                        NULL    AS balance_id,
+                        COALESCE(SUM(CASE WHEN cc.status='approved' AND cc.expires_at > CURDATE()
+                                         THEN cc.days_earned ELSE 0 END), 0) AS total_days,
+                        COALESCE(SUM(CASE WHEN cc.status='approved'
+                                         THEN cc.days_earned - cc.days_remaining ELSE 0 END), 0) AS used_days,
+                        COALESCE(SUM(CASE WHEN cc.status='approved' AND cc.expires_at > CURDATE()
+                                         THEN cc.days_remaining ELSE 0 END), 0) AS remaining_days
+                    FROM users u
+                    CROSS JOIN leave_types lt
+                    LEFT JOIN comp_claims cc ON cc.employee_id = u.id
+                    WHERE lt.balance_source = 'comp'
+                      AND u.role = 'employee' AND u.is_active = 1
+                ";
+                $p2 = [];
+                if ($search) {
+                    $q2 .= " AND u.name LIKE :search";
+                    $p2['search'] = "%{$search}%";
+                }
+                if ($type) {
+                    $q2 .= " AND lt.id = :type";
+                    $p2['type']   = $type;
+                }
+                $q2 .= "
+                    GROUP BY u.id, u.name, lt.id, lt.name
+                    HAVING remaining_days > 0 OR used_days > 0
+                ";
+                $stmt = $db->prepare($q2);
+                $stmt->execute($p2);
+                foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $r) $rows[] = $r;
+            }
+
+            // ──────────────────────────────────────────────────────────
+            // 3. ADMIN GRANT — from leave_balances WHERE period IS NULL
+            // ──────────────────────────────────────────────────────────
+            if ((!$source || $source === 'admin_grant') && (!$type || self::leaveTypeSource($db, $type) === 'admin_grant')) {
+                $q3 = "
+                    SELECT
+                        u.id    AS employee_id,
+                        u.name  AS employee_name,
+                        lt.id   AS leave_type_id,
+                        lt.name AS leave_type,
+                        'admin_grant' AS balance_source,
+                        NULL    AS period_id,
+                        NULL    AS period_name,
+                        NULL    AS period_start,
+                        NULL    AS period_end,
+                        lb.id   AS balance_id,
+                        lb.total_days,
+                        lb.used_days,
+                        (lb.total_days - lb.used_days) AS remaining_days
+                    FROM leave_balances lb
+                    JOIN users       u  ON lb.employee_id   = u.id
+                    JOIN leave_types lt ON lb.leave_type_id = lt.id
+                    WHERE lt.balance_source   = 'admin_grant'
+                      AND lb.leave_period_id  IS NULL
+                      AND u.is_active = 1
+                      AND (lb.remaining_days > 0 OR lb.used_days > 0)
+                ";
+                $p3 = [];
+                if ($search) {
+                    $q3 .= " AND u.name LIKE :search";
+                    $p3['search'] = "%{$search}%";
+                }
+                if ($type) {
+                    $q3 .= " AND lt.id = :type";
+                    $p3['type']   = $type;
+                }
+                $q3 .= " ORDER BY u.name ASC, lt.name ASC";
+                $stmt = $db->prepare($q3);
+                $stmt->execute($p3);
+                foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $r) $rows[] = $r;
+            }
+
+            // ──────────────────────────────────────────────────────────
+            // 4. UNLIMITED (Sick) — usage from leave_requests
+            // ──────────────────────────────────────────────────────────
+            if ((!$source || $source === 'unlimited') && (!$type || self::leaveTypeSource($db, $type) === 'unlimited')) {
+                $q4 = "
+                    SELECT
+                        u.id    AS employee_id,
+                        u.name  AS employee_name,
+                        lt.id   AS leave_type_id,
+                        lt.name AS leave_type,
+                        'unlimited' AS balance_source,
+                        NULL    AS period_id,
+                        NULL    AS period_name,
+                        NULL    AS period_start,
+                        NULL    AS period_end,
+                        NULL    AS balance_id,
+                        NULL    AS total_days,
+                        COALESCE(SUM(lr.total_days), 0) AS used_days,
+                        NULL    AS remaining_days
+                    FROM users u
+                    CROSS JOIN leave_types lt
+                    LEFT JOIN leave_requests lr
+                        ON lr.employee_id    = u.id
+                        AND lr.leave_type_id = lt.id
+                        AND lr.status        = 'approved'
+                    WHERE lt.balance_source = 'unlimited'
+                      AND u.role = 'employee' AND u.is_active = 1
+                ";
+                $p4 = [];
+                if ($search) {
+                    $q4 .= " AND u.name LIKE :search";
+                    $p4['search'] = "%{$search}%";
+                }
+                if ($type) {
+                    $q4 .= " AND lt.id = :type";
+                    $p4['type']   = $type;
+                }
+                $q4 .= "
+                    GROUP BY u.id, u.name, lt.id, lt.name
+                    HAVING used_days > 0
+                ";
+                $stmt = $db->prepare($q4);
+                $stmt->execute($p4);
+                foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $r) $rows[] = $r;
+            }
         }
-        if ($period) {
-            $query .= " AND lp.id = :period";
-            $params['period'] = $period;
-        } elseif (!empty($activePeriods) && !$search && !$type) {
-            $in = implode(',', array_map('intval', $activePeriods));
-            $query .= " AND lp.id IN ({$in})";
-        }
 
-        $query .= " ORDER BY u.name ASC, lp.start_date ASC, lt.name ASC";
+        // Sort merged rows by employee name then leave type
+        usort(
+            $rows,
+            fn($a, $b) =>
+            strcmp($a['employee_name'], $b['employee_name']) ?: strcmp($a['leave_type'], $b['leave_type'])
+        );
 
-        $stmt = $db->prepare($query);
-        $stmt->execute($params);
-        $balances = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $balances = $rows;
 
-        $leaveTypes = $db->query("SELECT id, name FROM leave_types ORDER BY name ASC")
+        $leaveTypes = $db->query("SELECT id, name, balance_source FROM leave_types ORDER BY name ASC")
             ->fetchAll(PDO::FETCH_ASSOC);
         $periods    = $db->query("SELECT id, name, start_date, end_date FROM leave_periods ORDER BY start_date DESC")
             ->fetchAll(PDO::FETCH_ASSOC);
 
         require __DIR__ . '/../../resources/views/admin_balances.php';
+    }
+
+
+    /** Helper: get balance_source for a given leave type id */
+    private static function leaveTypeSource($db, $typeId): string
+    {
+        static $cache = [];
+        if (!isset($cache[$typeId])) {
+            $s = $db->prepare("SELECT balance_source FROM leave_types WHERE id = :id");
+            $s->execute(['id' => $typeId]);
+            $cache[$typeId] = (string)($s->fetchColumn() ?: 'period');
+        }
+        return $cache[$typeId];
     }
 
     public static function exportBalances()

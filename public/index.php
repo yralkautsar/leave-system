@@ -198,6 +198,11 @@ if ($uri === '/leave-system/public/admin/users/toggle-status' && $_SERVER['REQUE
     exit;
 }
 
+if ($uri === '/leave-system/public/admin/users/reset-password' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    LeaveController::adminResetPassword();
+    exit;
+}
+
 /* ==========================================================
    ADMIN – LEAVE PERIODS
 ========================================================== */
