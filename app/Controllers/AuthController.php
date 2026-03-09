@@ -42,7 +42,8 @@ class AuthController
         $_SESSION['user'] = [
             'id'        => $user['id'],
             'name'      => $user['name'],
-            'nickname'  => $user['nickname'] ?? null,
+            'nickname'  => $user['nickname']  ?? null,
+            'religion'  => $user['religion']  ?? null,
             'role'      => $user['role'],
             'is_active' => $user['is_active'],
         ];

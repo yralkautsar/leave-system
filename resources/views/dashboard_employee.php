@@ -473,7 +473,7 @@ $userName = !empty($_SESSION['user']['nickname'])
 <!-- HERO -->
 <div class="ed-hero">
     <div class="ed-hero-text">
-        <h2>Hello, <?= htmlspecialchars($userName) ?> 👋</h2>
+        <h2>Hello, <?= htmlspecialchars($userName) ?> </h2>
         <p>Here's your leave overview for today.</p>
     </div>
     <a href="/leave-system/public/leave" class="ed-hero-btn">

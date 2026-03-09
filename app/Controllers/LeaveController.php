@@ -40,12 +40,31 @@ class LeaveController
         $monthStart = $month . '-01';
         $monthEnd   = date('Y-m-t', strtotime($monthStart));
 
-        // Holidays for the month
+        // Holidays for the month — filtered by user's religion
+        // (holidays with no religion rows apply to all)
+        $userReligion = $_SESSION['user']['religion'] ?? null;
+
         $stmt = $db->prepare("
-            SELECT holiday_date AS date, name FROM holidays
+            SELECT holiday_date AS date, name
+            FROM holidays
             WHERE holiday_date BETWEEN :s AND :e
+            AND (
+                NOT EXISTS (
+                    SELECT 1 FROM holiday_religions hr
+                    WHERE hr.holiday_id = holidays.id
+                )
+                OR EXISTS (
+                    SELECT 1 FROM holiday_religions hr
+                    WHERE hr.holiday_id = holidays.id
+                    AND hr.religion     = :religion
+                )
+            )
         ");
-        $stmt->execute(['s' => $monthStart, 'e' => $monthEnd]);
+        $stmt->execute([
+            's'        => $monthStart,
+            'e'        => $monthEnd,
+            'religion' => $userReligion ?? '',
+        ]);
         $holidays = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         // Employee's own pending + approved leaves overlapping this month
@@ -2333,6 +2352,16 @@ class LeaveController
         $holidays->execute(['year' => $year]);
         $holidays = $holidays->fetchAll(PDO::FETCH_ASSOC);
 
+        // Attach religion list to each holiday
+        $relStmt = $db->prepare("
+            SELECT religion FROM holiday_religions WHERE holiday_id = :id
+        ");
+        foreach ($holidays as &$h) {
+            $relStmt->execute(['id' => $h['id']]);
+            $h['religions'] = $relStmt->fetchAll(PDO::FETCH_COLUMN);
+        }
+        unset($h);
+
         // Available years for filter
         $years = $db->query("
             SELECT DISTINCT YEAR(holiday_date) AS y
@@ -2363,17 +2392,18 @@ class LeaveController
             exit;
         }
 
-        // Duplicate check
-        $check = $db->prepare("SELECT id FROM holidays WHERE holiday_date = :date LIMIT 1");
-        $check->execute(['date' => $date]);
-        if ($check->fetch()) {
-            $_SESSION['error'] = "A holiday already exists on " . date('d M Y', strtotime($date)) . ".";
-            header("Location: /leave-system/public/admin/holidays?year=" . date('Y', strtotime($date)));
-            exit;
-        }
-
         $stmt = $db->prepare("INSERT INTO holidays (holiday_date, name, type) VALUES (:date, :name, :type)");
         $stmt->execute(['date' => $date, 'name' => $name, 'type' => $type]);
+
+        $newId     = (int)$db->lastInsertId();
+        $religions = $_POST['religions'] ?? [];
+        if (!empty($religions)) {
+            $ins = $db->prepare("INSERT IGNORE INTO holiday_religions (holiday_id, religion) VALUES (:hid, :rel)");
+            foreach ($religions as $rel) {
+                $ins->execute(['hid' => $newId, 'rel' => $rel]);
+            }
+        }
+
 
         $_SESSION['success'] = "Holiday \"$name\" added.";
         header("Location: /leave-system/public/admin/holidays?year=" . date('Y', strtotime($date)));
@@ -2395,17 +2425,18 @@ class LeaveController
             exit;
         }
 
-        // Duplicate check excluding self
-        $check = $db->prepare("SELECT id FROM holidays WHERE holiday_date = :date AND id != :id LIMIT 1");
-        $check->execute(['date' => $date, 'id' => $id]);
-        if ($check->fetch()) {
-            $_SESSION['error'] = "Another holiday already exists on " . date('d M Y', strtotime($date)) . ".";
-            header("Location: /leave-system/public/admin/holidays?year=" . date('Y', strtotime($date)));
-            exit;
-        }
-
         $stmt = $db->prepare("UPDATE holidays SET holiday_date = :date, name = :name, type = :type WHERE id = :id");
         $stmt->execute(['date' => $date, 'name' => $name, 'type' => $type, 'id' => $id]);
+
+
+        $db->prepare("DELETE FROM holiday_religions WHERE holiday_id = :id")->execute(['id' => $id]);
+        $religions = $_POST['religions'] ?? [];
+        if (!empty($religions)) {
+            $ins = $db->prepare("INSERT IGNORE INTO holiday_religions (holiday_id, religion) VALUES (:hid, :rel)");
+            foreach ($religions as $rel) {
+                $ins->execute(['hid' => $id, 'rel' => $rel]);
+            }
+        }
 
         $_SESSION['success'] = "Holiday updated.";
         header("Location: /leave-system/public/admin/holidays?year=" . date('Y', strtotime($date)));

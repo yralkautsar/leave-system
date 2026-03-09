@@ -164,6 +164,69 @@ foreach ($holidays as $h) {
         color: #7c3aed;
     }
 
+
+    /* Religion column */
+    .hol-rel-all {
+        display: inline-block;
+        font-size: 11.5px;
+        padding: 3px 10px;
+        border-radius: 999px;
+        background: #f0fdf4;
+        color: #15803d;
+        font-weight: 600;
+        border: 1px solid #bbf7d0;
+    }
+
+    .hol-rel-pills {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+    }
+
+    .hol-rel-pill {
+        display: inline-block;
+        font-size: 11px;
+        padding: 2px 8px;
+        border-radius: 999px;
+        font-weight: 500;
+    }
+
+    .hol-rel-islam {
+        background: #fff7ed;
+        color: #c2410c;
+        border: 1px solid #fed7aa;
+    }
+
+    .hol-rel-kristen {
+        background: #eff6ff;
+        color: #1d4ed8;
+        border: 1px solid #bfdbfe;
+    }
+
+    .hol-rel-katolik {
+        background: #faf5ff;
+        color: #7e22ce;
+        border: 1px solid #e9d5ff;
+    }
+
+    .hol-rel-hindu {
+        background: #fef9c3;
+        color: #854d0e;
+        border: 1px solid #fde68a;
+    }
+
+    .hol-rel-buddha {
+        background: #f0fdf4;
+        color: #166534;
+        border: 1px solid #bbf7d0;
+    }
+
+    .hol-rel-konghucu {
+        background: #fdf2f8;
+        color: #9d174d;
+        border: 1px solid #fbcfe8;
+    }
+
     /* Actions */
     .hol-actions {
         display: flex;
@@ -305,6 +368,22 @@ foreach ($holidays as $h) {
                                         <span class="hol-badge-company">Company</span>
                                     <?php endif; ?>
                                 </td>
+                                <td width="260">
+                                    <?php
+                                    $isAll = empty($h['religions']) || count($h['religions']) === 6;
+                                    ?>
+                                    <?php if ($isAll): ?>
+                                        <span class="hol-rel-all">✦ Semua Agama</span>
+                                    <?php else: ?>
+                                        <div class="hol-rel-pills">
+                                            <?php foreach ($h['religions'] as $rel): ?>
+                                                <span class="hol-rel-pill hol-rel-<?= strtolower($rel) ?>">
+                                                    <?= htmlspecialchars($rel) ?>
+                                                </span>
+                                            <?php endforeach; ?>
+                                        </div>
+                                    <?php endif; ?>
+                                </td>
                                 <td width="160">
                                     <div class="hol-actions">
                                         <button class="hol-btn-edit"
@@ -361,6 +440,20 @@ foreach ($holidays as $h) {
                     <option value="national" ${sel(v('type'), 'national')}>National</option>
                     <option value="company"  ${sel(v('type'), 'company')}>Company</option>
                 </select>
+            </div>
+            <div class="gm-fg">
+                <label>Applies To
+                    <span style="font-size:11px;color:#94a3b8;font-weight:400;"> — leave blank for all religions</span>
+                </label>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 12px;margin-top:4px;">
+                    ${['Islam','Kristen','Katolik','Hindu','Buddha','Konghucu'].map(r => `
+                    <label style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:400;cursor:pointer;">
+                        <input type="checkbox" name="religions[]" value="${r}"
+                            ${(v('religions') || []).includes(r) ? 'checked' : ''}
+                            style="width:14px;height:14px;accent-color:#f97316;">
+                        ${r}
+                    </label>`).join('')}
+                </div>
             </div>
         </div>
         <div class="gm-ft">
